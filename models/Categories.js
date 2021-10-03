@@ -5,17 +5,17 @@ const CategoriesSchema = mongoose.Schema({
 		type: String,
 		required: true,
 	},
+	value: {
+		type: String,
+		required: true,
+	},
 	id: {
 		type: String,
 		required: true,
 	},
-	bgColor: {
+	category: {
 		type: String,
 		required: true,
-	},
-	color: {
-		type: String,
-		default: "#fffff",
 	},
 	createdDate: {
 		type: Date,

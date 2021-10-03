@@ -16,17 +16,17 @@ mongoose.connect(process.env.DB_CONNECTION, () => {
 });
 // Import Data Routes
 const projectsRoutes = require("./routes/projects");
+const badgeRoutes = require("./routes/badges");
 const categoryRoutes = require("./routes/categories");
-const listcategoryRoutes = require("./routes/listcategories");
 app.use("/projects", projectsRoutes);
+app.use("/badges", badgeRoutes);
 app.use("/categories", categoryRoutes);
-app.use("/listcategories", listcategoryRoutes);
 // Import Files Routes
 const filesRoutes = require("./routes/files");
 app.use("/files", filesRoutes);
 // Documentation
 app.use("/", (req, res) => {
-	res.send("<h1>Welcome to Portfolio Backend</h1>");
+	res.send("<h1>Welcome to Portfolio Backend</h1><p>Version 1</p>");
 });
 // Listening server
 app.listen(port, () => {
