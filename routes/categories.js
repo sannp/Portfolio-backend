@@ -5,7 +5,7 @@ const Category = require("../models/Categories");
 // @route POST / addnew
 // @desc Save New Category to DB
 router.post("/addnew", async (req, res) => {
-	if (req.body.title && req.body.bgColor) {
+	if (req.body.title && req.body.value && req.body.category) {
 		const categories = await Category.find();
 		if (categories.some((item) => item.title === req.body.title)) {
 			res.json({
@@ -16,9 +16,9 @@ router.post("/addnew", async (req, res) => {
 		} else {
 			const category = new Category({
 				title: req.body.title,
+				value: req.body.value,
+				category: req.body.category,
 				id: categories.length + 1,
-				bgColor: req.body.bgColor,
-				color: req.body.color,
 			});
 			try {
 				const savedCategory = await category.save();
@@ -34,7 +34,7 @@ router.post("/addnew", async (req, res) => {
 	} else {
 		res.json({
 			success: false,
-			message: "Title, BgColor are required.",
+			message: "Title, Value, Category are required.",
 			data: null,
 		});
 	}
@@ -82,8 +82,8 @@ router.patch("/:categoryId", async (req, res) => {
 				{
 					$set: {
 						title: req.body.title,
-						bgColor: req.body.bgColor,
-						color: req.body.color,
+						value: req.body.value,
+						category: req.body.category,
 						id: req.body.id,
 					},
 				}

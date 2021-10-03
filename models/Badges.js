@@ -1,11 +1,7 @@
 const mongoose = require("mongoose");
 
-const ListCategoriesSchema = mongoose.Schema({
+const BadgesSchema = mongoose.Schema({
 	title: {
-		type: String,
-		required: true,
-	},
-	value: {
 		type: String,
 		required: true,
 	},
@@ -13,9 +9,13 @@ const ListCategoriesSchema = mongoose.Schema({
 		type: String,
 		required: true,
 	},
-	category: {
+	bgColor: {
 		type: String,
 		required: true,
+	},
+	color: {
+		type: String,
+		default: "#fffff",
 	},
 	createdDate: {
 		type: Date,
@@ -23,4 +23,4 @@ const ListCategoriesSchema = mongoose.Schema({
 	},
 });
 
-module.exports = mongoose.model("ListCategories", ListCategoriesSchema);
+module.exports = mongoose.model("Badges", BadgesSchema);
