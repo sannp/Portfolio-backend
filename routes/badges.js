@@ -73,7 +73,7 @@ router.get("/:badgeId", async (req, res) => {
 // @route PATCH / :badgeId
 // @desc Update Specific Badge in DB
 router.patch("/:badgeId", async (req, res) => {
-	if (req.body.title && req.body.value && req.body.badge && req.body.id) {
+	if (req.body.title && req.body.bgColor && req.body.color && req.body.id) {
 		try {
 			const updatedBadge = await Badge.updateOne(
 				{
@@ -99,7 +99,7 @@ router.patch("/:badgeId", async (req, res) => {
 	} else {
 		res.json({
 			success: false,
-			message: "Title, Value, Badge, Id are required.",
+			message: "Title, Bg Color, Color, Id are required.",
 			data: null,
 		});
 	}
