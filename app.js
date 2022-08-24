@@ -8,8 +8,8 @@ require("dotenv/config");
 const app = express();
 const port = process.env.PORT;
 app.use(bodyParser.json());
-app.use(cors());
 
+app.use(cors());
 // Connect to DB
 mongoose.connect(process.env.DB_CONNECTION, () => {
 	console.log("Connected to DB");
@@ -18,9 +18,11 @@ mongoose.connect(process.env.DB_CONNECTION, () => {
 const projectsRoutes = require("./routes/projects");
 const badgeRoutes = require("./routes/badges");
 const categoryRoutes = require("./routes/categories");
+const blogpostsRoutes = require("./routes/blogposts");
 app.use("/projects", projectsRoutes);
 app.use("/badges", badgeRoutes);
 app.use("/categories", categoryRoutes);
+app.use("/blogposts", blogpostsRoutes);
 // Import Files Routes
 const filesRoutes = require("./routes/files");
 app.use("/files", filesRoutes);
