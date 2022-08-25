@@ -16,10 +16,12 @@ mongoose.connect(process.env.DB_CONNECTION, () => {
 });
 // Import Data Routes
 const projectsRoutes = require("./routes/projects");
+const designsRoutes = require("./routes/designs");
 const badgeRoutes = require("./routes/badges");
 const categoryRoutes = require("./routes/categories");
 const blogpostsRoutes = require("./routes/blogposts");
 app.use("/projects", projectsRoutes);
+app.use("/designs", designsRoutes);
 app.use("/badges", badgeRoutes);
 app.use("/categories", categoryRoutes);
 app.use("/blogposts", blogpostsRoutes);
