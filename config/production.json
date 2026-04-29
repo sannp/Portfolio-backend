@@ -1,0 +1,25 @@
+{
+  "server": {
+    "port": 3000,
+    "host": "0.0.0.0"
+  },
+  "database": {
+    "default": "mongodb",
+    "mongodb": {
+      "uri": "mongodb://placeholder-set-via-env-var:27017/portfolio",
+      "options": {
+        "maxPoolSize": 20,
+        "serverSelectionTimeoutMS": 5000,
+        "socketTimeoutMS": 45000
+      }
+    }
+  },
+  "logging": {
+    "level": "info",
+    "console": false
+  },
+  "cors": {
+    "origin": "*",
+    "credentials": true
+  }
+}

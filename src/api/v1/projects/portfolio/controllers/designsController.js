@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const Design = require("../models/Designs");
+const Design = require('../../../../../../models/Designs');
 
 // @route POST / addnew
 // @desc Save New Design to DB

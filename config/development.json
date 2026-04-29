@@ -1,0 +1,21 @@
+{
+  "server": {
+    "port": 5000,
+    "host": "localhost"
+  },
+  "database": {
+    "default": "mongodb",
+    "mongodb": {
+      "uri": "mongodb://localhost:27017/portfolio-dev",
+      "options": {
+        "maxPoolSize": 5,
+        "serverSelectionTimeoutMS": 5000,
+        "socketTimeoutMS": 45000
+      }
+    }
+  },
+  "logging": {
+    "level": "debug",
+    "console": true
+  }
+}

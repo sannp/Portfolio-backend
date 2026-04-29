@@ -1,21 +1,35 @@
 {
-	"name": "portfolio-backend",
-	"version": "1.0.0",
-	"description": "Backend app for portfolio",
-	"main": "app.js",
+	"name": "base-server-template",
+	"version": "2.0.0",
+	"description": "Base server template with multi-DB support and AI integrations",
+	"main": "server.js",
 	"scripts": {
-		"start": "node app.js"
+		"start": "node server.js",
+		"dev": "NODE_ENV=development node server.js",
+		"test": "jest",
+		"test:watch": "jest --watch",
+		"test:coverage": "jest --coverage",
+		"test:manual:services": "node tests/manual/aiService.manual.test.js",
+		"test:manual:routes": "node tests/manual/aiRoutes.manual.test.js"
 	},
 	"author": "Sanket",
 	"license": "ISC",
 	"dependencies": {
-		"body-parser": "^1.20.0",
+		"axios": "^1.7.9",
+		"config": "^3.3.12",
 		"cors": "^2.8.5",
-		"dotenv": "^16.0.1",
-		"express": "^4.18.1",
-		"gridfs-stream": "^1.1.1",
-		"mongoose": "^6.5.2",
+		"dotenv": "^16.5.0",
+		"express": "^4.21.2",
+		"@google/generative-ai": "^0.21.0",
+		"mongoose": "^8.14.0",
 		"multer": "^1.4.5-lts.1",
-		"multer-gridfs-storage": "^5.0.2"
+		"openai": "^4.73.1",
+		"pg": "^8.13.1",
+		"@anthropic-ai/sdk": "^0.39.0"
+	},
+	"devDependencies": {
+		"nodemon": "^3.1.9",
+		"jest": "^29.7.0",
+		"supertest": "^6.3.4"
 	}
 }
