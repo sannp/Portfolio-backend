@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const Badge = require('../../../../../../models/Badges');
+const Badge = require('#models/Badges');
 
 // @route POST / addnew
 // @desc Save New Badge to DB

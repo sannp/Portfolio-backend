@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Project = require('../../../../../../models/Projects');
+const Project = require('#models/Projects');
 
 // @route POST / addnew
 // @desc Save New Project to DB
