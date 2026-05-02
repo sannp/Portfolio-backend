@@ -4,8 +4,9 @@ const config = require('config');
 const dbManager = require('./database/dbConfig');
 
 // Import project routes
-const portfolioRoutes = require('./api/v1/projects/portfolio/routes');
-const aiRoutes = require('./api/v1/ai/routes');
+const portfolioRoutes = require('./api/projects/portfolio/routes');
+const aiRoutes = require('./api/ai/routes');
+const researchRoutes = require('./api/research/routes');
 
 const app = express();
 
@@ -27,8 +28,9 @@ app.get('/health', (req, res) => {
 });
 
 // API routes
-app.use('/api/v1/portfolio', portfolioRoutes);
-app.use('/api/v1/ai', aiRoutes);
+app.use('/api/portfolio', portfolioRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/research', researchRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

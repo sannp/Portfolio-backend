@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const BlogPost = require('../../../../../../models/BlogPosts');
+const BlogPost = require('#models/BlogPosts');
 
 // @route POST / addnew
 // @desc Add New BlogPost to DB

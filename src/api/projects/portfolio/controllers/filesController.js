@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const path = require('path');
 const { Readable } = require('stream');
 const mongoose = require('mongoose');
-const dbManager = require('../../../../../../src/database/dbConfig');
+const dbManager = require('#database/dbConfig');
 const config = require('config');
 
 // Use memory storage - file will be in req.file.buffer

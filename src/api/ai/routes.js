@@ -1,6 +1,6 @@
 const express = require('express');
 const config = require('config');
-const aiService = require('../../../services/aiService');
+const aiService = require('#services/aiService');
 
 const router = express.Router();
 
@@ -32,7 +32,7 @@ const authenticateApiSecret = (req, res, next) => {
 router.use(authenticateApiSecret);
 
 /**
- * GET /api/v1/ai/availability
+ * GET /api/ai/availability
  * Check AI provider availability and available models
  */
 router.get('/availability', async (req, res) => {
@@ -65,7 +65,7 @@ router.get('/availability', async (req, res) => {
 });
 
 /**
- * POST /api/v1/ai/generate
+ * POST /api/ai/generate
  * Generate text using AI
  * Body: { prompt: string, provider?: string, model?: string, temperature?: number, maxTokens?: number }
  */
@@ -106,7 +106,7 @@ router.post('/generate', async (req, res) => {
 });
 
 /**
- * POST /api/v1/ai/chat
+ * POST /api/ai/chat
  * Chat completion with conversation history
  * Body: { messages: Array<{role: string, content: string}>, provider?: string, model?: string }
  */
@@ -147,7 +147,7 @@ router.post('/chat', async (req, res) => {
 });
 
 /**
- * POST /api/v1/ai/embed
+ * POST /api/ai/embed
  * Generate embeddings for text
  * Body: { text: string, provider?: string, model?: string }
  */
@@ -186,7 +186,7 @@ router.post('/embed', async (req, res) => {
 });
 
 /**
- * POST /api/v1/ai/analyze
+ * POST /api/ai/analyze
  * Analyze text (sentiment, themes, classification)
  * Body: { text: string, provider?: string, model?: string }
  */
@@ -226,7 +226,7 @@ router.post('/analyze', async (req, res) => {
 });
 
 /**
- * GET /api/v1/ai/providers
+ * GET /api/ai/providers
  * List all available providers and their models (without checking availability)
  */
 router.get('/providers', (req, res) => {
