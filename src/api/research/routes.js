@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const researchController = require('./controllers/researchController');
+const dbManager = require('#database/dbConfig');
 
 // REST endpoints for research (Socket.io handles the streaming)
 // These endpoints provide status and management
@@ -19,6 +20,50 @@ router.get('/health', (req, res) => {
       streaming: 'Socket.io'
     }
   });
+});
+
+/**
+ * GET /api/research/assistant/health
+ * Project Assistant detailed health check - service and workflow status
+ */
+router.get('/assistant/health', async (req, res) => {
+  try {
+    // Check database connections
+    const dbStatus = {
+      mongodb: dbManager.connections.mongodb?.readyState === 1 ? 'connected' : 'disconnected',
+      postgresql: dbManager.connections.postgresql ? 'connected' : 'disconnected'
+    };
+
+    // Get active research jobs count
+    const activeJobs = researchController.getActiveJobsCount?.() || 0;
+
+    res.json({
+      success: true,
+      message: 'Project Assistant health status',
+      data: {
+        timestamp: new Date().toISOString(),
+        status: 'healthy',
+        components: {
+          database: dbStatus,
+          research: {
+            activeJobs,
+            workflow: 'ready',
+            features: ['web-search', 'ai-summarization', 'report-generation', 'streaming']
+          }
+        },
+        version: '2.0.0'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Health check failed',
+      data: {
+        error: error.message,
+        timestamp: new Date().toISOString()
+      }
+    });
+  }
 });
 
 /**

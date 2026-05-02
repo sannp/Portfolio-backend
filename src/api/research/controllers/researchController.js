@@ -123,6 +123,17 @@ class ResearchController {
       }
     }
   }
+
+  // Get count of active (running) research jobs
+  getActiveJobsCount() {
+    let count = 0;
+    for (const job of researchJobs.values()) {
+      if (job.status === 'running') {
+        count++;
+      }
+    }
+    return count;
+  }
 }
 
 // Auto-cleanup every hour
