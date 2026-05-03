@@ -17,3 +17,31 @@ services:
         sync: false
       - key: API_SECRET
         generateValue: true
+      - key: N8N_ENABLED
+        value: true
+      - key: N8N_PORT
+        value: 5678
+      - key: N8N_PATH
+        value: /n8n/
+      - key: N8N_PROTOCOL
+        value: https
+      - key: N8N_BASIC_AUTH_ACTIVE
+        value: true
+      - key: N8N_BASIC_AUTH_USER
+        sync: false
+      - key: N8N_BASIC_AUTH_PASSWORD
+        sync: false
+      - key: N8N_ENCRYPTION_KEY
+        generateValue: true
+      - key: DB_TYPE
+        value: postgresdb
+      - key: DB_POSTGRESDB_HOST
+        sync: false
+      - key: DB_POSTGRESDB_PORT
+        value: 5432
+      - key: DB_POSTGRESDB_DATABASE
+        value: n8n
+      - key: DB_POSTGRESDB_USER
+        sync: false
+      - key: DB_POSTGRESDB_PASSWORD
+        sync: false
