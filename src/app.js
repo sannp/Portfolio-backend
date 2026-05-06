@@ -17,73 +17,75 @@ const app = express();
 
 // Main n8n proxy - passes paths as-is (n8n configured with N8N_PATH=/n8n/)
 const n8nProxy = createProxyMiddleware({
-  target: `http://localhost:${process.env.N8N_PORT || 5678}`,
+  target: `http://127.0.0.1:${process.env.N8N_PORT || 5678}`,
   changeOrigin: true,
   ws: true,
   pathRewrite: { '^/n8n/': '/' },
-  onProxyReq: (proxyReq, req, res) => {
-    proxyReq.setHeader('Host', req.headers.host);
-  },
-  onError: (err, req, res) => {
-    console.error('n8n proxy error:', err.message);
-    if (!res.headersSent) {
-      res.status(503).json({
-        success: false,
-        message: 'n8n service unavailable',
-        data: {
-          status: n8nService.getStatus(),
-          error: err.message
-        }
-      });
+  on: {
+    proxyReq: (proxyReq, req, res) => {
+      // In production, we might need to preserve the host for n8n to generate correct URLs
+      // but changeOrigin: true handles the target host. 
+      // If N8N_EDITOR_BASE_URL is set, n8n uses that instead of the Host header.
+      if (process.env.NODE_ENV === 'production') {
+        proxyReq.setHeader('X-Forwarded-Host', req.headers.host);
+      }
+    },
+    error: (err, req, res) => {
+      console.error('n8n proxy error:', err.message);
+      if (!res.headersSent) {
+        res.status(503).json({
+          success: false,
+          message: 'n8n service unavailable',
+          data: {
+            status: n8nService.getStatus(),
+            error: err.message,
+            target: `http://127.0.0.1:${process.env.N8N_PORT || 5678}`
+          }
+        });
+      }
     }
   },
-  logLevel: process.env.NODE_ENV === 'development' ? 'debug' : 'warn'
+  logger: console
 });
 
 // Static asset proxy - forward to n8n's /assets/ path
 const n8nAssetProxy = createProxyMiddleware({
-  target: `http://localhost:${process.env.N8N_PORT || 5678}`,
+  target: `http://127.0.0.1:${process.env.N8N_PORT || 5678}`,
   changeOrigin: true,
   pathRewrite: { '^/': '/assets/' },
-  onProxyReq: (proxyReq, req, res) => {
-    proxyReq.setHeader('Host', req.headers.host);
-  },
-  onError: (err, req, res) => {
-    console.error('n8n asset proxy error:', err.message);
-    if (!res.headersSent) res.status(503).send('n8n asset service unavailable');
-  },
-  logLevel: 'warn'
+  on: {
+    error: (err, req, res) => {
+      console.error('n8n asset proxy error:', err.message);
+      if (!res.headersSent) res.status(503).send('n8n asset service unavailable');
+    }
+  }
 });
 
 // REST API proxy - forward to n8n's /rest/ path
 const n8nRestProxy = createProxyMiddleware({
-  target: `http://localhost:${process.env.N8N_PORT || 5678}`,
+  target: `http://127.0.0.1:${process.env.N8N_PORT || 5678}`,
   changeOrigin: true,
   ws: true,
   pathRewrite: { '^/': '/rest/' },
-  onProxyReq: (proxyReq, req, res) => {
-    proxyReq.setHeader('Host', req.headers.host);
-  },
-  onError: (err, req, res) => {
-    console.error('n8n rest proxy error:', err.message);
-    if (!res.headersSent) res.status(503).send('n8n rest service unavailable');
-  },
-  logLevel: 'warn'
+  on: {
+    error: (err, req, res) => {
+      console.error('n8n rest proxy error:', err.message);
+      if (!res.headersSent) res.status(503).send('n8n rest service unavailable');
+    }
+  }
 });
 
 // Webhook proxy - forward to n8n's /webhook/ path
 const n8nWebhookProxy = createProxyMiddleware({
-  target: `http://localhost:${process.env.N8N_PORT || 5678}`,
+  target: `http://127.0.0.1:${process.env.N8N_PORT || 5678}`,
   changeOrigin: true,
   pathRewrite: { '^/': '/webhook/' },
-  onProxyReq: (proxyReq, req, res) => {
-    proxyReq.setHeader('Host', req.headers.host);
-  },
-  onError: (err, req, res) => {
-    console.error('n8n webhook proxy error:', err.message);
-    if (!res.headersSent) res.status(503).send('n8n webhook service unavailable');
-  },
-  logLevel: 'warn'
+  on: {
+    error: (err, req, res) => {
+      console.error('n8n webhook proxy error:', err.message);
+      if (!res.headersSent) res.status(503).send('n8n webhook service unavailable');
+    }
+  }
 });
 
 app.use('/n8n', n8nProxy);
@@ -105,7 +107,8 @@ app.get('/health', async (req, res) => {
   };
 
   // Check n8n status
-  const n8nStatus = process.env.N8N_ENABLED !== 'false' ? n8nService.getStatus() : { enabled: false };
+  const n8nStatus = n8nService.getStatus();
+  const n8nEnabled = process.env.N8N_ENABLED !== 'false';
 
   res.json({
     success: true,
@@ -115,7 +118,15 @@ app.get('/health', async (req, res) => {
       environment: process.env.NODE_ENV || 'development',
       version: '2.0.0',
       database: dbStatus,
-      n8n: n8nStatus
+      n8n: {
+        enabled: n8nEnabled,
+        ...n8nStatus,
+        config: {
+          port: process.env.N8N_PORT || 5678,
+          host: process.env.N8N_HOST || '127.0.0.1',
+          baseUrl: process.env.N8N_EDITOR_BASE_URL || 'not set'
+        }
+      }
     }
   });
 });
