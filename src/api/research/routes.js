@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
+const { authenticateApiSecret } = require('../../middleware/auth');
 const researchController = require('./controllers/researchController');
-const dbManager = require('#database/dbConfig');
+
+// Apply authentication to all research endpoints
+router.use(authenticateApiSecret);
 
 // REST endpoints for research (Socket.io handles the streaming)
 // These endpoints provide status and management
@@ -28,12 +31,6 @@ router.get('/health', (req, res) => {
  */
 router.get('/assistant/health', async (req, res) => {
   try {
-    // Check database connections
-    const dbStatus = {
-      mongodb: dbManager.connections.mongodb?.readyState === 1 ? 'connected' : 'disconnected',
-      postgresql: dbManager.connections.postgresql ? 'connected' : 'disconnected'
-    };
-
     // Get active research jobs count
     const activeJobs = researchController.getActiveJobsCount?.() || 0;
 
@@ -43,15 +40,11 @@ router.get('/assistant/health', async (req, res) => {
       data: {
         timestamp: new Date().toISOString(),
         status: 'healthy',
-        components: {
-          database: dbStatus,
-          research: {
-            activeJobs,
-            workflow: 'ready',
-            features: ['web-search', 'ai-summarization', 'report-generation', 'streaming']
-          }
-        },
-        version: '2.0.0'
+        research: {
+          activeJobs,
+          workflow: 'ready',
+          features: ['web-search', 'ai-summarization', 'report-generation', 'streaming']
+        }
       }
     });
   } catch (error) {

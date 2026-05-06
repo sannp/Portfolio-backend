@@ -19,7 +19,7 @@
     "console": false
   },
   "cors": {
-    "origin": "*",
+    "origin": "https://ai-research-assistant-ashy.vercel.app",
     "credentials": true
   }
 }
