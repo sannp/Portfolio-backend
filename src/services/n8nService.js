@@ -35,27 +35,48 @@ class N8nService {
       const env = {
         ...process.env,
         N8N_PORT: this.port,
-        N8N_PROTOCOL: process.env.N8N_PROTOCOL || 'https',
+        // Use HTTP for local development
+        N8N_PROTOCOL: process.env.N8N_PROTOCOL || 'http',
         N8N_HOST: process.env.N8N_HOST || 'localhost',
-        N8N_PATH: process.env.N8N_PATH || '/',
+        // n8n runs with /n8n/ base path so URLs are generated correctly
+        N8N_PATH: '/n8n/',
+        N8N_EDITOR_BASE_URL: process.env.N8N_EDITOR_BASE_URL || 'http://localhost:5001/n8n/',
+        WEBHOOK_URL: process.env.WEBHOOK_URL || 'http://localhost:5001/n8n/webhook/',
+        // Use ws (not wss) for local HTTP development
+        N8N_ENDPOINT_WEBSOCKET: process.env.N8N_ENDPOINT_WEBSOCKET || 'ws',
         N8N_BASIC_AUTH_ACTIVE: process.env.N8N_BASIC_AUTH_ACTIVE || 'true',
         N8N_BASIC_AUTH_USER: process.env.N8N_BASIC_AUTH_USER,
         N8N_BASIC_AUTH_PASSWORD: process.env.N8N_BASIC_AUTH_PASSWORD,
         N8N_ENCRYPTION_KEY: process.env.N8N_ENCRYPTION_KEY,
-        DB_TYPE: process.env.DB_TYPE || 'postgresdb',
-        DB_POSTGRESDB_HOST: process.env.DB_POSTGRESDB_HOST,
-        DB_POSTGRESDB_PORT: process.env.DB_POSTGRESDB_PORT || '5432',
-        DB_POSTGRESDB_DATABASE: process.env.DB_POSTGRESDB_DATABASE || 'n8n',
-        DB_POSTGRESDB_USER: process.env.DB_POSTGRESDB_USER,
-        DB_POSTGRESDB_PASSWORD: process.env.DB_POSTGRESDB_PASSWORD,
+        // Disable secure auth cookie for HTTP development
+        N8N_SECURE_AUTH_COOKIE: 'false',
+        DB_TYPE: 'postgresdb',
+        DB_POSTGRESDB_HOST: process.env.N8N_DB_HOST || process.env.PORTFOLIO_DB_HOST || process.env.POSTGRES_HOST,
+        DB_POSTGRESDB_PORT: process.env.N8N_DB_PORT || process.env.PORTFOLIO_DB_PORT || process.env.POSTGRES_PORT || '5432',
+        DB_POSTGRESDB_DATABASE: process.env.N8N_DB_NAME || process.env.PORTFOLIO_DB_NAME || process.env.POSTGRES_DATABASE || 'n8n',
+        DB_POSTGRESDB_USER: process.env.N8N_DB_USER || process.env.PORTFOLIO_DB_USER || process.env.POSTGRES_USERNAME,
+        DB_POSTGRESDB_PASSWORD: process.env.N8N_DB_PASS || process.env.PORTFOLIO_DB_PASS || process.env.PORTFOLIO_DB_PASSWORD || process.env.POSTGRES_PASSWORD,
+        DB_POSTGRESDB_SSL_ENABLED: process.env.N8N_DB_SSL_ENABLED || process.env.PORTFOLIO_DB_SSL || process.env.POSTGRES_SSL || 'true',
+        DB_POSTGRESDB_SSL_REJECT_UNAUTHORIZED: process.env.N8N_DB_SSL_REJECT_UNAUTHORIZED || 'false',
         N8N_RUNNERS_ENABLED: 'true',
         N8N_HIDE_USAGE_PAGE: 'true',
+        // Trust proxy headers for correct URL generation
+        N8N_PROXY_HOPS: '1',
+        N8N_BLOCK_ENV_ACCESS_IN_NODE: 'false',
+        N8N_GIT_NODE_DISABLE_BARE_REPOS: 'true',
       };
 
       this.process = spawn(n8nPath, ['start'], {
         env,
         stdio: ['ignore', 'pipe', 'pipe'],
         detached: false,
+      });
+
+      // Ensure child process is killed when the main Node.js process exits
+      process.on('exit', () => {
+        if (this.process && !this.process.killed) {
+          this.process.kill();
+        }
       });
 
       let output = '';

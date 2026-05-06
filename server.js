@@ -1,7 +1,8 @@
 require('dotenv').config();
 const http = require('http');
+const config = require('config');
 const { Server } = require('socket.io');
-const { app, initializeApp } = require('./src/app');
+const { app, initializeApp, n8nProxy } = require('./src/app');
 const n8nService = require('./src/services/n8nService');
 
 const PORT = process.env.PORT || 5000;
@@ -24,16 +25,26 @@ const startServer = async () => {
     const server = http.createServer(app);
 
     // Setup Socket.io
+    const corsOptions = config.has('cors') ? config.get('cors') : { origin: process.env.CORS_ORIGIN || '*' };
     const io = new Server(server, {
       cors: {
-        origin: process.env.CORS_ORIGIN || '*',
-        methods: ['GET', 'POST']
-      }
+        origin: corsOptions.origin,
+        methods: ['GET', 'POST'],
+        credentials: corsOptions.credentials
+      },
+      destroyUpgrade: false
     });
 
     // Setup research socket handlers
     const SocketHandler = require('./src/api/research/socketHandler');
     new SocketHandler(io);
+
+    // Handle WebSocket upgrades for n8n
+    server.on('upgrade', (req, socket, head) => {
+      if (req.url.startsWith('/n8n') || req.url.startsWith('/rest') || req.url.startsWith('/webhook')) {
+        n8nProxy.upgrade(req, socket, head);
+      }
+    });
 
     // Start the server
     server.listen(PORT, () => {

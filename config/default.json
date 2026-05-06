@@ -70,5 +70,9 @@
     "maxFileSize": 20000000,
     "allowedTypes": ["image/jpeg", "image/jpg", "image/png", "image/gif"],
     "bucketName": "uploads"
+  },
+  "cors": {
+    "origin": "*",
+    "credentials": true
   }
 }

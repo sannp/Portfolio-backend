@@ -17,6 +17,31 @@ services:
         sync: false
       - key: API_SECRET
         generateValue: true
+      # Portfolio App Database (Aiven PostgreSQL)
+      - key: PORTFOLIO_DB_HOST
+        sync: false
+      - key: PORTFOLIO_DB_PORT
+        value: 5432
+      - key: PORTFOLIO_DB_NAME
+        sync: false
+      - key: PORTFOLIO_DB_USER
+        sync: false
+      - key: PORTFOLIO_DB_PASS
+        sync: false
+      - key: PORTFOLIO_DB_SSL
+        value: true
+      # Legacy support (deprecated)
+      - key: POSTGRES_HOST
+        sync: false
+      - key: POSTGRES_PORT
+        value: 5432
+      - key: POSTGRES_DATABASE
+        sync: false
+      - key: POSTGRES_USERNAME
+        sync: false
+      - key: POSTGRES_PASSWORD
+        sync: false
+      # n8n Configuration
       - key: N8N_ENABLED
         value: true
       - key: N8N_PORT
@@ -33,15 +58,8 @@ services:
         sync: false
       - key: N8N_ENCRYPTION_KEY
         generateValue: true
+      # n8n Database (reuses PORTFOLIO_DB_* by default)
+      - key: N8N_DB_NAME
+        value: n8n
       - key: DB_TYPE
         value: postgresdb
-      - key: DB_POSTGRESDB_HOST
-        sync: false
-      - key: DB_POSTGRESDB_PORT
-        value: 5432
-      - key: DB_POSTGRESDB_DATABASE
-        value: n8n
-      - key: DB_POSTGRESDB_USER
-        sync: false
-      - key: DB_POSTGRESDB_PASSWORD
-        sync: false

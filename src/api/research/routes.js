@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
+const { authenticateApiSecret } = require('../../middleware/auth');
 const researchController = require('./controllers/researchController');
+
+// Apply authentication to all research endpoints
+router.use(authenticateApiSecret);
 
 // REST endpoints for research (Socket.io handles the streaming)
 // These endpoints provide status and management
