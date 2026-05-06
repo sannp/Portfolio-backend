@@ -35,9 +35,9 @@ class N8nService {
       const env = {
         ...process.env,
         N8N_PORT: this.port,
-        // Use HTTP for local development
-        N8N_PROTOCOL: process.env.N8N_PROTOCOL || 'http',
-        N8N_HOST: process.env.N8N_HOST || 'localhost',
+        // Use HTTP for internal communication
+        N8N_PROTOCOL: 'http',
+        N8N_HOST: process.env.N8N_HOST || '127.0.0.1',
         // n8n runs with /n8n/ base path so URLs are generated correctly
         N8N_PATH: '/n8n/',
         N8N_EDITOR_BASE_URL: process.env.N8N_EDITOR_BASE_URL || 'http://localhost:5001/n8n/',
@@ -64,6 +64,7 @@ class N8nService {
         N8N_PROXY_HOPS: '1',
         N8N_BLOCK_ENV_ACCESS_IN_NODE: 'false',
         N8N_GIT_NODE_DISABLE_BARE_REPOS: 'true',
+        N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: 'false',
       };
 
       this.process = spawn(n8nPath, ['start'], {
@@ -95,10 +96,11 @@ class N8nService {
         // Check for ready signals
         if (str.includes('Editor is now accessible') || 
             str.includes('Server is listening') ||
-            str.includes('n8n ready')) {
+            str.includes('n8n ready') ||
+            str.includes('Started n8n')) {
           this.isReady = true;
           clearTimeout(startupTimer);
-          console.log('✅ n8n is ready');
+          console.log('✅ n8n is ready and listening on port ' + this.port);
           resolve();
         }
       });
@@ -120,15 +122,15 @@ class N8nService {
         this.isReady = false;
       });
 
-      // Fallback: resolve after 15s if we haven't detected ready state
+      // Fallback: resolve after 30s if we haven't detected ready state
       setTimeout(() => {
-        if (!this.isReady) {
+        if (!this.isReady && this.process) {
           this.isReady = true;
           clearTimeout(startupTimer);
-          console.log('✅ n8n assumed ready (fallback)');
+          console.log('✅ n8n assumed ready (fallback) after 30s');
           resolve();
         }
-      }, 15000);
+      }, 30000);
     });
   }
 
