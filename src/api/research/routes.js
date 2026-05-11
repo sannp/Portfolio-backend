@@ -3,15 +3,12 @@ const router = express.Router();
 const { authenticateApiSecret } = require('../../middleware/auth');
 const researchController = require('./controllers/researchController');
 
-// Apply authentication to all research endpoints
-router.use(authenticateApiSecret);
-
 // REST endpoints for research (Socket.io handles the streaming)
 // These endpoints provide status and management
 
 /**
  * GET /api/research/health
- * Check research service status
+ * Check research service status - PUBLIC (no auth required)
  */
 router.get('/health', (req, res) => {
   res.json({
@@ -27,7 +24,7 @@ router.get('/health', (req, res) => {
 
 /**
  * GET /api/research/assistant/health
- * Project Assistant detailed health check - service and workflow status
+ * Project Assistant detailed health check - PUBLIC (no auth required)
  */
 router.get('/assistant/health', async (req, res) => {
   try {
@@ -58,6 +55,9 @@ router.get('/assistant/health', async (req, res) => {
     });
   }
 });
+
+// Apply authentication to all subsequent research endpoints
+router.use(authenticateApiSecret);
 
 /**
  * POST /api/research/start
