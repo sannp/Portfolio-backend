@@ -1,9 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const config = require('config');
-const { createProxyMiddleware } = require('http-proxy-middleware');
+const mongoose = require('mongoose');
+const axios = require('axios');
 const dbManager = require('./database/dbConfig');
-const n8nService = require('./services/n8nService');
 
 // Import project routes
 const portfolioRoutes = require('./api/projects/portfolio/routes');
@@ -12,103 +12,29 @@ const researchRoutes = require('./api/research/routes');
 
 const app = express();
 
-// n8n proxy middleware - must be before other routes and body parsers
-// Proxy is always enabled to allow external n8n processes
-
-// Main n8n proxy - passes paths as-is (n8n configured with N8N_PATH=/n8n/)
-const n8nProxy = createProxyMiddleware({
-  target: `http://127.0.0.1:${process.env.N8N_PORT || 5678}`,
-  changeOrigin: true,
-  ws: true,
-  pathRewrite: { '^/n8n/': '/' },
-  on: {
-    proxyReq: (proxyReq, req, res) => {
-      // In production, we might need to preserve the host for n8n to generate correct URLs
-      // but changeOrigin: true handles the target host. 
-      // If N8N_EDITOR_BASE_URL is set, n8n uses that instead of the Host header.
-      if (process.env.NODE_ENV === 'production') {
-        proxyReq.setHeader('X-Forwarded-Host', req.headers.host);
-      }
-    },
-    error: (err, req, res) => {
-      console.error('n8n proxy error:', err.message);
-      if (!res.headersSent) {
-        res.status(503).json({
-          success: false,
-          message: 'n8n service unavailable',
-          data: {
-            status: n8nService.getStatus(),
-            error: err.message,
-            target: `http://127.0.0.1:${process.env.N8N_PORT || 5678}`
-          }
-        });
-      }
-    }
-  },
-  logger: console
-});
-
-// Static asset proxy - forward to n8n's /assets/ path
-const n8nAssetProxy = createProxyMiddleware({
-  target: `http://127.0.0.1:${process.env.N8N_PORT || 5678}`,
-  changeOrigin: true,
-  pathRewrite: { '^/': '/assets/' },
-  on: {
-    error: (err, req, res) => {
-      console.error('n8n asset proxy error:', err.message);
-      if (!res.headersSent) res.status(503).send('n8n asset service unavailable');
-    }
-  }
-});
-
-// REST API proxy - forward to n8n's /rest/ path
-const n8nRestProxy = createProxyMiddleware({
-  target: `http://127.0.0.1:${process.env.N8N_PORT || 5678}`,
-  changeOrigin: true,
-  ws: true,
-  pathRewrite: { '^/': '/rest/' },
-  on: {
-    error: (err, req, res) => {
-      console.error('n8n rest proxy error:', err.message);
-      if (!res.headersSent) res.status(503).send('n8n rest service unavailable');
-    }
-  }
-});
-
-// Webhook proxy - forward to n8n's /webhook/ path
-const n8nWebhookProxy = createProxyMiddleware({
-  target: `http://127.0.0.1:${process.env.N8N_PORT || 5678}`,
-  changeOrigin: true,
-  pathRewrite: { '^/': '/webhook/' },
-  on: {
-    error: (err, req, res) => {
-      console.error('n8n webhook proxy error:', err.message);
-      if (!res.headersSent) res.status(503).send('n8n webhook service unavailable');
-    }
-  }
-});
-
-app.use('/n8n', n8nProxy);
-app.use('/assets', n8nAssetProxy);
-app.use('/rest', n8nRestProxy);
-app.use('/webhook', n8nWebhookProxy);
-console.log('🔧 n8n proxy: /n8n, /assets, /rest, /webhook configured');
-
-// Standard Middleware (must be after proxy)
+// Standard Middleware
 app.use(express.json());
 app.use(cors(config.has('cors') ? config.get('cors') : {}));
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
   // Check database connections
+  // Mongoose connection states: 0=disconnected, 1=connected, 2=connecting, 3=disconnecting
   const dbStatus = {
-    mongodb: dbManager.connections.mongodb?.readyState === 1 ? 'connected' : 'disconnected',
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
     postgresql: dbManager.connections.postgresql ? 'connected' : 'disconnected'
   };
 
-  // Check n8n status
-  const n8nStatus = n8nService.getStatus();
-  const n8nEnabled = process.env.N8N_ENABLED !== 'false';
+  // Check external n8n server
+  let n8nStatus = { status: 'unknown', url: process.env.N8N_SERVER_URL || 'https://n8n-server-wewk.onrender.com' };
+  try {
+    const n8nUrl = process.env.N8N_SERVER_URL || 'https://n8n-server-wewk.onrender.com';
+    const response = await axios.get(`${n8nUrl}/healthz`, { timeout: 5000 });
+    const isHealthy = response.status === 200 && response.data?.status === 'ok';
+    n8nStatus = { status: isHealthy ? 'connected' : 'error', url: n8nUrl, health: response.data };
+  } catch (error) {
+    n8nStatus = { status: 'disconnected', url: process.env.N8N_SERVER_URL || 'https://n8n-server-wewk.onrender.com', error: error.message };
+  }
 
   res.json({
     success: true,
@@ -118,14 +44,8 @@ app.get('/health', async (req, res) => {
       environment: process.env.NODE_ENV || 'development',
       version: '2.0.0',
       database: dbStatus,
-      n8n: {
-        enabled: n8nEnabled,
-        ...n8nStatus,
-        config: {
-          port: process.env.N8N_PORT || 5678,
-          host: process.env.N8N_HOST || '127.0.0.1',
-          baseUrl: process.env.N8N_EDITOR_BASE_URL || 'not set'
-        }
+      services: {
+        n8n: n8nStatus
       }
     }
   });
@@ -148,7 +68,7 @@ app.get('/', (req, res) => {
         <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
         <style>
             :root {
-                --primary: #FF6C37; /* n8n orange */
+                --primary: #3b82f6; /* blue */
                 --bg: #0b0e14;
                 --card-bg: rgba(23, 28, 38, 0.8);
                 --text: #f1f5f9;
@@ -288,11 +208,11 @@ app.get('/', (req, res) => {
                 API Online
             </div>
             <h1>Portfolio Core</h1>
-            <p>High-performance backend serving AI integrations and automated workflows via n8n.</p>
+            <p>High-performance backend serving AI integrations and portfolio management.</p>
             
             <div class="btn-group">
-                <a href="/n8n/" class="btn btn-primary">
-                    Launch n8n Workflows
+                <a href="/api/portfolio" class="btn btn-primary">
+                    Portfolio API
                 </a>
                 <a href="/health" class="btn btn-secondary">
                     System Health Check
@@ -337,4 +257,4 @@ const initializeApp = async () => {
   }
 };
 
-module.exports = { app, initializeApp, n8nProxy };
+module.exports = { app, initializeApp };
