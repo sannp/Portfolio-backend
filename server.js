@@ -29,6 +29,10 @@ const startServer = async () => {
     const SocketHandler = require('./src/api/research/socketHandler');
     new SocketHandler(io);
 
+    // Setup portfolio chat socket handlers
+    const PortfolioSocketHandler = require('./src/api/projects/portfolio/socketHandler');
+    new PortfolioSocketHandler(io);
+
     // Start the server
     server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
@@ -38,7 +42,8 @@ const startServer = async () => {
       console.log(`🤖 AI endpoints: /api/ai/*`);
       console.log(`📁 Portfolio endpoints: /api/portfolio/*`);
       console.log(`🔬 Research endpoints: /api/research/*`);
-      console.log(`🔌 Socket.io enabled for real-time research streaming`);
+      console.log(`💬 Portfolio Chat: /api/portfolio/chat/*`);
+      console.log(`🔌 Socket.io enabled for real-time research and portfolio chat`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);
