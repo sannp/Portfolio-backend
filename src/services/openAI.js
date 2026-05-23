@@ -3,14 +3,22 @@ const config = require('config');
 
 class OpenAIService {
   constructor() {
-    const openaiConfig = config.get('ai.providers.openai');
-    this.client = new OpenAI({
-      apiKey: openaiConfig.apiKey || process.env.OPENAI_API_KEY,
-    });
-    this.defaultModel = openaiConfig.model;
+    const apiKey = process.env.OPENAI_API_KEY || config.get('ai.providers.openai.apiKey');
+    
+    if (!apiKey) {
+      this.client = null;
+      this.available = false;
+    } else {
+      this.client = new OpenAI({ apiKey });
+      this.available = true;
+    }
+    this.defaultModel = config.get('ai.providers.openai.model');
   }
 
   async generateText(prompt, options = {}) {
+    if (!this.client) {
+      throw new Error('OpenAI API key not configured');
+    }
     try {
       const messages = [
         { role: 'user', content: prompt }
@@ -35,6 +43,9 @@ class OpenAIService {
   }
 
   async generateImage(prompt, options = {}) {
+    if (!this.client) {
+      throw new Error('OpenAI API key not configured');
+    }
     try {
       const response = await this.client.images.generate({
         model: options.model || 'dall-e-3',
@@ -55,6 +66,9 @@ class OpenAIService {
   }
 
   async analyzeText(text, options = {}) {
+    if (!this.client) {
+      throw new Error('OpenAI API key not configured');
+    }
     try {
       const analysisPrompt = options.analysisPrompt || 
         `Analyze the following text for sentiment, key themes, and classification:\n\n"${text}"\n\nProvide a structured JSON response.`;
@@ -84,6 +98,9 @@ class OpenAIService {
   }
 
   async embedText(text, options = {}) {
+    if (!this.client) {
+      throw new Error('OpenAI API key not configured');
+    }
     try {
       const response = await this.client.embeddings.create({
         model: options.model || 'text-embedding-ada-002',
@@ -96,6 +113,29 @@ class OpenAIService {
       };
     } catch (error) {
       throw new Error(`OpenAI Embedding Error: ${error.message}`);
+    }
+  }
+
+  async chat(messages, options = {}) {
+    if (!this.client) {
+      throw new Error('OpenAI API key not configured');
+    }
+    try {
+      const completion = await this.client.chat.completions.create({
+        model: options.model || this.defaultModel,
+        messages: messages,
+        max_tokens: options.maxTokens || config.get('ai.providers.openai.maxTokens'),
+        temperature: options.temperature || config.get('ai.providers.openai.temperature'),
+        ...options
+      });
+
+      return {
+        content: completion.choices[0].message.content,
+        usage: completion.usage,
+        model: completion.model
+      };
+    } catch (error) {
+      throw new Error(`OpenAI Chat Error: ${error.message}`);
     }
   }
 }

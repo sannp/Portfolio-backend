@@ -31,8 +31,8 @@
     "providers": {
       "gemini": {
         "apiKey": "",
-        "model": "gemini-1.5-pro",
-        "models": ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-1.0-pro", "gemini-pro"],
+        "model": "gemini-3.5-flash",
+        "models": ["gemini-3.5-flash", "gemini-3.5-pro", "gemini-pro"],
         "maxTokens": 1000,
         "temperature": 0.7
       },
@@ -52,8 +52,8 @@
       },
       "anthropic": {
         "apiKey": "",
-        "model": "claude-3-sonnet-20240229",
-        "models": ["claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"],
+        "model": "claude-3-5-sonnet-20241022",
+        "models": ["claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022", "claude-3-opus-20240229"],
         "maxTokens": 1000,
         "temperature": 0.7
       }
@@ -63,7 +63,25 @@
     "portfolio": {
       "database": "mongodb",
       "enabled": true,
-      "routes": ["projects", "designs", "badges", "categories", "blogposts", "files"]
+      "routes": ["projects", "designs", "badges", "categories", "blogposts", "files", "chat"],
+      "chat": {
+        "enabled": true,
+        "aiProvider": "gemini",
+        "rag": {
+          "topK": 5,
+          "similarityThreshold": 0.7,
+          "embeddingDimension": 1536,
+          "chunkSize": 300
+        },
+        "rateLimit": {
+          "maxRequestsPerIP": 10,
+          "windowMs": 3600000
+        },
+        "guardrail": {
+          "enabled": true,
+          "fallbackToKeywords": true
+        }
+      }
     }
   },
   "upload": {

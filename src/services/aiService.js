@@ -106,7 +106,7 @@ class AIService {
 
     for (const provider of providersToTry) {
       const service = this.providers[provider];
-      if (!service || !service.chat) continue;
+      if (!service || !service.chat || !service.available) continue;
 
       try {
         const result = await service.chat(messages, options);
@@ -119,12 +119,23 @@ class AIService {
       } catch (error) {
         console.warn(`Failed with ${provider}: ${error.message}`);
         if (provider === providersToTry[providersToTry.length - 1]) {
-          throw new Error(`All AI providers failed. Last error: ${error.message}`);
+          return {
+            success: false,
+            error: `All AI providers failed. Last error: ${error.message}`,
+            providersAttempted: providersToTry,
+            failedProviders: providersToTry.map(p => ({ provider: p, error: 'Failed' })),
+            lastError: error.message,
+            lastProvider: provider
+          };
         }
       }
     }
 
-    throw new Error('No AI providers available with chat capability');
+    return {
+      success: false,
+      error: 'No AI providers available with chat capability',
+      providersAttempted: providersToTry
+    };
   }
 
   async embedText(text, options = {}) {
