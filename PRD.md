@@ -76,6 +76,13 @@ The **Base Server Template** is a scalable Node.js/Express boilerplate designed 
 - **Validation**: Schema validation for configuration files
 - **Security**: Sensitive data via environment variables
 
+### 4.7 Recruiter Chatbot & Resume Management (Offline Ingestion Only)
+- **Recruiter Chatbot**: Integrated chatbot powered by Google Gemini (with fallbacks) using RAG (Retrieval-Augmented Generation) to answer professional questions.
+- **RAG Architecture**: Uses `pgvector` in PostgreSQL to do semantic similarity searches over chunked and embedded resume data, reducing LLM context token usage.
+- **Offline-Only Resume Updates**: 
+  - **No HTTP CRUD Endpoints**: In order to maximize production security and keep the backend API highly secure, there are no public or administrative HTTP REST endpoints for resume management.
+  - **Script-Driven Management**: Resume updates, PDF text extraction, AI parsing, and vector embedding generation are strictly performed offline using local developer CLI scripts (`scripts/generate-resume-rag.js`).
+
 ---
 
 ## 5. Technical Requirements
