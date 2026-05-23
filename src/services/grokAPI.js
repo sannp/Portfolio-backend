@@ -3,12 +3,16 @@ const config = require('config');
 
 class GrokService {
   constructor() {
-    this.apiKey = config.get('ai.providers.grok.apiKey') || process.env.GROK_API_KEY;
+    this.apiKey = process.env.GROK_API_KEY || config.get('ai.providers.grok.apiKey');
     this.baseURL = 'https://api.x.ai/v1';
     this.defaultModel = config.get('ai.providers.grok.model');
+    this.available = !!this.apiKey;
   }
 
   async makeRequest(endpoint, data) {
+    if (!this.apiKey) {
+      throw new Error('Grok API key not configured');
+    }
     try {
       const response = await axios.post(`${this.baseURL}${endpoint}`, data, {
         headers: {
@@ -27,6 +31,9 @@ class GrokService {
   }
 
   async generateText(prompt, options = {}) {
+    if (!this.apiKey) {
+      throw new Error('Grok API key not configured');
+    }
     try {
       const data = {
         model: options.model || this.defaultModel,
@@ -56,6 +63,9 @@ class GrokService {
   }
 
   async analyzeText(text, options = {}) {
+    if (!this.apiKey) {
+      throw new Error('Grok API key not configured');
+    }
     try {
       const analysisPrompt = options.analysisPrompt || 
         `Analyze the following text for sentiment, key themes, and classification.
@@ -90,6 +100,9 @@ class GrokService {
   }
 
   async chat(messages, options = {}) {
+    if (!this.apiKey) {
+      throw new Error('Grok API key not configured');
+    }
     try {
       const data = {
         model: options.model || this.defaultModel,
@@ -112,6 +125,9 @@ class GrokService {
   }
 
   async getModels() {
+    if (!this.apiKey) {
+      throw new Error('Grok API key not configured');
+    }
     try {
       const response = await axios.get(`${this.baseURL}/models`, {
         headers: {

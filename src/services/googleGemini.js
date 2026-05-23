@@ -4,11 +4,22 @@ const config = require('config');
 class GeminiService {
   constructor() {
     const geminiConfig = config.get('ai.providers.gemini');
-    this.client = new GoogleGenerativeAI(geminiConfig.apiKey || process.env.GEMINI_API_KEY);
+    const apiKey = process.env.GEMINI_API_KEY || geminiConfig.apiKey;
+    
+    if (!apiKey) {
+      this.client = null;
+      this.available = false;
+    } else {
+      this.client = new GoogleGenerativeAI(apiKey);
+      this.available = true;
+    }
     this.defaultModel = geminiConfig.model;
   }
 
   async generateText(prompt, options = {}) {
+    if (!this.client) {
+      throw new Error('Gemini API key not configured');
+    }
     try {
       const model = this.client.getGenerativeModel({ 
         model: options.model || this.defaultModel 
@@ -34,6 +45,9 @@ class GeminiService {
   }
 
   async analyzeText(text, options = {}) {
+    if (!this.client) {
+      throw new Error('Gemini API key not configured');
+    }
     try {
       const model = this.client.getGenerativeModel({ 
         model: options.model || this.defaultModel 
@@ -64,6 +78,9 @@ class GeminiService {
   }
 
   async embedText(text, options = {}) {
+    if (!this.client) {
+      throw new Error('Gemini API key not configured');
+    }
     try {
       const model = this.client.getGenerativeModel({ 
         model: 'embedding-001' 
@@ -82,6 +99,9 @@ class GeminiService {
   }
 
   async chat(messages, options = {}) {
+    if (!this.client) {
+      throw new Error('Gemini API key not configured');
+    }
     try {
       const model = this.client.getGenerativeModel({ 
         model: options.model || this.defaultModel 

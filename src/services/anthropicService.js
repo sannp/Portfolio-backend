@@ -4,13 +4,22 @@ const config = require('config');
 class AnthropicService {
   constructor() {
     const anthropicConfig = config.get('ai.providers.anthropic');
-    this.client = new Anthropic({
-      apiKey: anthropicConfig.apiKey || process.env.ANTHROPIC_API_KEY,
-    });
+    const apiKey = process.env.ANTHROPIC_API_KEY || anthropicConfig.apiKey;
+    
+    if (!apiKey) {
+      this.client = null;
+      this.available = false;
+    } else {
+      this.client = new Anthropic({ apiKey });
+      this.available = true;
+    }
     this.defaultModel = anthropicConfig.model || 'claude-3-sonnet-20240229';
   }
 
   async generateText(prompt, options = {}) {
+    if (!this.client) {
+      throw new Error('Anthropic API key not configured');
+    }
     try {
       const message = await this.client.messages.create({
         model: options.model || this.defaultModel,
@@ -36,6 +45,9 @@ class AnthropicService {
   }
 
   async analyzeText(text, options = {}) {
+    if (!this.client) {
+      throw new Error('Anthropic API key not configured');
+    }
     try {
       const analysisPrompt = options.analysisPrompt || 
         `Analyze the following text for sentiment, key themes, and classification.
@@ -73,6 +85,9 @@ class AnthropicService {
   }
 
   async chat(messages, options = {}) {
+    if (!this.client) {
+      throw new Error('Anthropic API key not configured');
+    }
     try {
       // Convert messages to Anthropic format (user/assistant only)
       const anthropicMessages = messages.map(msg => ({
