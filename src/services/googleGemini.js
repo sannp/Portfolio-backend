@@ -82,16 +82,26 @@ class GeminiService {
       throw new Error('Gemini API key not configured');
     }
     try {
+      const modelName = options.model || 'gemini-embedding-001';
       const model = this.client.getGenerativeModel({ 
-        model: 'embedding-001' 
+        model: modelName 
       });
 
-      const result = await model.embedContent(text);
+      let result;
+      if (modelName.startsWith('gemini-embedding')) {
+        result = await model.embedContent({
+          content: { parts: [{ text: text }] },
+          outputDimensionality: 1536
+        });
+      } else {
+        result = await model.embedContent(text);
+      }
+
       const embedding = result.embedding;
 
       return {
         embedding: embedding.values,
-        model: 'embedding-001'
+        model: modelName
       };
     } catch (error) {
       throw new Error(`Gemini Embedding Error: ${error.message}`);

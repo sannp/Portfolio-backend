@@ -4,7 +4,7 @@ const express = require('express');
 jest.mock('../../models/Badges');
 
 const Badge = require('../../models/Badges');
-const badgesController = require('../../src/api/v1/projects/portfolio/controllers/badgesController');
+const badgesController = require('../../src/api/projects/portfolio/controllers/badgesController');
 
 describe('Badges Controller', () => {
   let app;

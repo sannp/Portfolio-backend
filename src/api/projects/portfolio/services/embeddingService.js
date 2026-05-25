@@ -49,7 +49,14 @@ class EmbeddingService {
               continue;
             }
 
-            const embedding = embeddingResult.data.embedding;
+            let embedding = embeddingResult.data.embedding;
+
+            // Normalize embedding dimension to match expected dimension (1536)
+            if (embedding.length < this.embeddingDimension) {
+              embedding = [...embedding, ...new Array(this.embeddingDimension - embedding.length).fill(0)];
+            } else if (embedding.length > this.embeddingDimension) {
+              embedding = embedding.slice(0, this.embeddingDimension);
+            }
 
             // Store chunk with embedding in database
             const query = `
@@ -156,7 +163,16 @@ class EmbeddingService {
         throw new Error('Failed to generate query embedding');
       }
 
-      return result.data.embedding;
+      let embedding = result.data.embedding;
+
+      // Normalize embedding dimension to match expected dimension (1536)
+      if (embedding.length < this.embeddingDimension) {
+        embedding = [...embedding, ...new Array(this.embeddingDimension - embedding.length).fill(0)];
+      } else if (embedding.length > this.embeddingDimension) {
+        embedding = embedding.slice(0, this.embeddingDimension);
+      }
+
+      return embedding;
 
     } catch (error) {
       console.error('Error generating query embedding:', error);

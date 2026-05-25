@@ -19,7 +19,11 @@
     "console": false
   },
   "cors": {
-    "origin": "https://ai-research-assistant-ashy.vercel.app",
+    "origin": [
+      "https://sanket-patil.web.app",
+      "https://sanket-patil.firebaseapp.com",
+      "https://ai-research-assistant-ashy.vercel.app"
+    ],
     "credentials": true
   }
 }

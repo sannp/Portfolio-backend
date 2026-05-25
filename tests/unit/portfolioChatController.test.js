@@ -26,6 +26,10 @@ describe('ChatController', () => {
     jest.clearAllMocks();
   });
 
+  afterAll(() => {
+    chatController.stopCleanupInterval();
+  });
+
   describe('processMessage', () => {
     beforeEach(() => {
       // Setup default mocks

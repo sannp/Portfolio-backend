@@ -53,8 +53,11 @@ class DatabaseManager {
 
       // Test connection
       const client = await pool.connect();
-      await client.query('SELECT NOW()');
-      client.release();
+      try {
+        await client.query('SELECT NOW()');
+      } finally {
+        client.release();
+      }
 
       console.log('✅ PostgreSQL connected successfully');
       this.connections.postgresql = pool;
@@ -91,8 +94,11 @@ class DatabaseManager {
 
       // Test connection
       const client = await pool.connect();
-      await client.query('SELECT NOW()');
-      client.release();
+      try {
+        await client.query('SELECT NOW()');
+      } finally {
+        client.release();
+      }
 
       console.log('✅ Portfolio PostgreSQL connected successfully');
       this.connections.portfolioPostgresql = pool;

@@ -12,9 +12,22 @@ const researchRoutes = require('./api/research/routes');
 
 const app = express();
 
-// Standard Middleware
+// Setup CORS options dynamically
+const getCorsOptions = () => {
+  const options = config.has('cors') ? { ...config.get('cors') } : {};
+  let corsOrigin = process.env.CORS_ORIGIN;
+  if (corsOrigin) {
+    if (corsOrigin.includes(',')) {
+      options.origin = corsOrigin.split(',').map(o => o.trim());
+    } else {
+      options.origin = corsOrigin;
+    }
+  }
+  return options;
+};
+
+app.use(cors(getCorsOptions()));
 app.use(express.json());
-app.use(cors(config.has('cors') ? config.get('cors') : {}));
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
