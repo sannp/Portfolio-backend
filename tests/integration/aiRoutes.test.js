@@ -30,7 +30,7 @@ jest.mock('../../src/services/aiService', () => ({
 }));
 
 const aiService = require('../../src/services/aiService');
-const aiRoutes = require('../../src/api/v1/ai/routes');
+const aiRoutes = require('../../src/api/ai/routes');
 
 describe('AI Routes Integration', () => {
   let app;

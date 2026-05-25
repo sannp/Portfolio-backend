@@ -19,14 +19,37 @@ jest.mock('config', () => ({
     const config = {
       'upload.maxFileSize': 20000000,
       'upload.allowedTypes': ['image/jpeg', 'image/png', 'image/gif'],
-      'upload.bucketName': 'uploads'
+      'upload.bucketName': 'uploads',
+      'ai.providers.gemini': { apiKey: 'dummy', models: ['dummy'] },
+      'ai.providers.openai': { apiKey: 'dummy', models: ['dummy'] },
+      'ai.providers.grok': { apiKey: 'dummy', models: ['dummy'] },
+      'ai.providers.anthropic': { apiKey: 'dummy', models: ['dummy'] },
+      'ai.defaultProvider': 'gemini',
+      'projects.portfolio.chat.enabled': false
     };
-    return config[key];
+    if (key in config) {
+      return config[key];
+    }
+    return {};
+  }),
+  has: jest.fn((key) => {
+    const keys = [
+      'upload.maxFileSize',
+      'upload.allowedTypes',
+      'upload.bucketName',
+      'ai.providers.gemini',
+      'ai.providers.openai',
+      'ai.providers.grok',
+      'ai.providers.anthropic',
+      'ai.defaultProvider',
+      'projects.portfolio.chat.enabled'
+    ];
+    return keys.includes(key);
   })
 }));
 
 const Project = require('../../models/Projects');
-const portfolioRoutes = require('../../src/api/v1/projects/portfolio/routes');
+const portfolioRoutes = require('../../src/api/projects/portfolio/routes');
 
 describe('Portfolio Routes Integration', () => {
   let app;
@@ -130,5 +153,10 @@ describe('Portfolio Routes Integration', () => {
 
       expect(response.status).not.toBe(404);
     });
+  });
+
+  afterAll(() => {
+    const { chatController } = require('../../src/api/projects/portfolio/controllers/chatController');
+    chatController.stopCleanupInterval();
   });
 });

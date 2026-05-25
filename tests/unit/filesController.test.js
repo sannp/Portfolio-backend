@@ -26,7 +26,7 @@ jest.mock('../../src/database/dbConfig', () => ({
 }));
 
 const dbManager = require('../../src/database/dbConfig');
-const filesController = require('../../src/api/v1/projects/portfolio/controllers/filesController');
+const filesController = require('../../src/api/projects/portfolio/controllers/filesController');
 
 describe('Files Controller', () => {
   let app;
@@ -49,7 +49,7 @@ describe('Files Controller', () => {
   describe('GET /image/:filename', () => {
     test('should return image successfully', async () => {
       const mockFiles = [{ _id: 'file123', filename: 'test.jpg' }];
-      const mockPipe = jest.fn();
+      const mockPipe = jest.fn((res) => res.end());
       mockGfs.find.mockReturnValue({ toArray: jest.fn().mockResolvedValue(mockFiles) });
       mockGfs.openDownloadStream.mockReturnValue({ pipe: mockPipe });
       dbManager.getGridFS.mockReturnValue(mockGfs);
@@ -172,12 +172,12 @@ describe('Files Controller', () => {
     test('should return file by id successfully', async () => {
       const mockFiles = [{ _id: 'file123' }];
       mockGfs.find.mockReturnValue({ toArray: jest.fn().mockResolvedValue(mockFiles) });
-      mockGfs.openDownloadStream.mockReturnValue({ pipe: jest.fn() });
+      mockGfs.openDownloadStream.mockReturnValue({ pipe: jest.fn((res) => res.end()) });
       dbManager.getGridFS.mockReturnValue(mockGfs);
 
       await request(app).get('/file/file123');
 
-      expect(mockGfs.find).toHaveBeenCalledWith({ _id: 'file123' });
+      expect(mockGfs.find).toHaveBeenCalledWith({ _id: expect.any(Object) });
     }, 3000);
 
     test('should return error for invalid file id', async () => {

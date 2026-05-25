@@ -21,6 +21,8 @@
   "cors": {
     "origin": [
       "http://localhost:8080",
+      "https://sanket-patil.web.app",
+      "https://sanket-patil.firebaseapp.com",
       "https://ai-research-assistant-ashy.vercel.app"
     ],
     "credentials": true

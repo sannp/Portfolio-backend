@@ -4,7 +4,7 @@ const express = require('express');
 jest.mock('../../models/BlogPosts');
 
 const BlogPost = require('../../models/BlogPosts');
-const blogpostsController = require('../../src/api/v1/projects/portfolio/controllers/blogpostsController');
+const blogpostsController = require('../../src/api/projects/portfolio/controllers/blogpostsController');
 
 describe('BlogPosts Controller', () => {
   let app;

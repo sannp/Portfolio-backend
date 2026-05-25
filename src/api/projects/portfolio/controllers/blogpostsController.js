@@ -18,12 +18,21 @@ router.post("/addnew", async (req, res) => {
 			intro: req.body.intro,
 		});
 		try {
-			const savedPost = await blogPost.save();
-			res.json({
-				success: true,
-				message: "BlogPost Added Successfully",
-				data: savedPost,
-			});
+			const postPresent = await BlogPost.find({ title: req.body.title });
+			if (postPresent.length === 0) {
+				const savedPost = await blogPost.save();
+				res.json({
+					success: true,
+					message: "BlogPost Added Successfully",
+					data: savedPost,
+				});
+			} else {
+				res.json({
+					success: false,
+					message: "Title already present.",
+					data: null,
+				});
+			}
 		} catch (error) {
 			res.json({ success: false, message: error, data: null });
 		}

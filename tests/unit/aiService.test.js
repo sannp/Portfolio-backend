@@ -5,7 +5,8 @@ jest.mock('../../src/services/googleGemini', () => ({
   generateText: jest.fn(),
   analyzeText: jest.fn(),
   chat: jest.fn(),
-  embedText: jest.fn()
+  embedText: jest.fn(),
+  available: true
 }));
 
 jest.mock('../../src/services/openAI', () => ({
@@ -13,7 +14,8 @@ jest.mock('../../src/services/openAI', () => ({
   analyzeText: jest.fn(),
   chat: jest.fn(),
   embedText: jest.fn(),
-  generateImage: jest.fn()
+  generateImage: jest.fn(),
+  available: true
 }));
 
 jest.mock('../../src/services/grokAPI', () => ({

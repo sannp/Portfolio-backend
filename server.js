@@ -15,10 +15,19 @@ const startServer = async () => {
     const server = http.createServer(app);
 
     // Setup Socket.io
-    const corsOptions = config.has('cors') ? config.get('cors') : { origin: process.env.CORS_ORIGIN || '*' };
+    const corsOptions = config.has('cors') ? { ...config.get('cors') } : {};
+    let corsOrigin = process.env.CORS_ORIGIN;
+    if (corsOrigin) {
+      if (corsOrigin.includes(',')) {
+        corsOrigin = corsOrigin.split(',').map(o => o.trim());
+      }
+    } else {
+      corsOrigin = corsOptions.origin || '*';
+    }
+
     const io = new Server(server, {
       cors: {
-        origin: corsOptions.origin,
+        origin: corsOrigin,
         methods: ['GET', 'POST'],
         credentials: corsOptions.credentials
       },

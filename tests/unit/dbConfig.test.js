@@ -19,32 +19,74 @@ jest.mock('pg', () => ({
 }));
 
 // Mock config
-jest.mock('config', () => ({
-  get: jest.fn((key) => {
-    const config = {
-      'database.default': 'mongodb',
-      'database.mongodb': {
-        uri: 'mongodb://localhost:27017/test',
-        options: { useNewUrlParser: true }
-      },
-      'database.postgresql': {
-        host: 'localhost',
-        port: 5432,
-        database: 'testdb',
-        username: 'testuser',
-        password: 'testpass',
-        ssl: false,
-        maxConnections: 10
-      },
-      'upload.bucketName': 'uploads'
-    };
-    return config[key];
-  })
-}));
+jest.mock('config', () => {
+  const configObj = {
+    'database.default': 'mongodb',
+    'database.mongodb': {
+      uri: 'mongodb://localhost:27017/test',
+      options: { useNewUrlParser: true }
+    },
+    'database.mongodb.uri': 'mongodb://localhost:27017/test',
+    'database.mongodb.options': { useNewUrlParser: true },
+    'database.postgresql': {
+      host: 'localhost',
+      port: 5432,
+      database: 'testdb',
+      username: 'testuser',
+      password: 'testpass',
+      ssl: false,
+      maxConnections: 10
+    },
+    'database.postgresql.host': 'localhost',
+    'upload.bucketName': 'uploads'
+  };
+
+  return {
+    get: jest.fn((key) => configObj[key]),
+    has: jest.fn((key) => key in configObj)
+  };
+});
 
 const dbManager = require('../../src/database/dbConfig');
 
 describe('DatabaseManager', () => {
+  const envVars = [
+    'DB_DEFAULT',
+    'DB_CONNECTION',
+    'PORTFOLIO_DB_SSL',
+    'POSTGRES_SSL',
+    'PORTFOLIO_DB_CA_CERT',
+    'POSTGRES_CA_CERT',
+    'PORTFOLIO_DB_HOST',
+    'POSTGRES_HOST',
+    'PORTFOLIO_DB_PORT',
+    'POSTGRES_PORT',
+    'PORTFOLIO_DB_NAME',
+    'POSTGRES_DATABASE',
+    'PORTFOLIO_DB_USER',
+    'POSTGRES_USERNAME',
+    'PORTFOLIO_DB_PASS',
+    'PORTFOLIO_DB_PASSWORD',
+    'POSTGRES_PASSWORD',
+    'PORTFOLIO_RAG_DB_NAME'
+  ];
+  const envBackup = {};
+
+  beforeAll(() => {
+    envVars.forEach(v => {
+      envBackup[v] = process.env[v];
+      delete process.env[v];
+    });
+  });
+
+  afterAll(() => {
+    envVars.forEach(v => {
+      if (envBackup[v] !== undefined) {
+        process.env[v] = envBackup[v];
+      }
+    });
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     // Reset the singleton state

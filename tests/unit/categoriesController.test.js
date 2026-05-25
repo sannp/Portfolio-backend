@@ -4,7 +4,7 @@ const express = require('express');
 jest.mock('../../models/Categories');
 
 const Category = require('../../models/Categories');
-const categoriesController = require('../../src/api/v1/projects/portfolio/controllers/categoriesController');
+const categoriesController = require('../../src/api/projects/portfolio/controllers/categoriesController');
 
 describe('Categories Controller', () => {
   let app;
