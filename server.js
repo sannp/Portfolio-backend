@@ -46,13 +46,6 @@ const startServer = async () => {
     server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-      console.log(`📚 API docs: http://localhost:${PORT}/`);
-      console.log(`🤖 AI endpoints: /api/ai/*`);
-      console.log(`📁 Portfolio endpoints: /api/portfolio/*`);
-      console.log(`🔬 Research endpoints: /api/research/*`);
-      console.log(`💬 Portfolio Chat: /api/portfolio/chat/*`);
-      console.log(`🔌 Socket.io enabled for real-time research and portfolio chat`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);

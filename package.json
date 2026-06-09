@@ -1,7 +1,7 @@
 {
-	"name": "base-server-template",
-	"version": "2.0.0",
-	"description": "Base server template with multi-DB support and AI integrations",
+	"name": "portfolio-backend",
+	"version": "1.0.0",
+	"description": "Portfolio backend with multi-DB support and AI integrations",
 	"main": "server.js",
 	"scripts": {
 		"start": "node server.js",
@@ -26,6 +26,7 @@
 		"cors": "^2.8.5",
 		"dotenv": "^16.5.0",
 		"express": "^4.21.2",
+		"groq-sdk": "^1.2.1",
 		"mongoose": "^8.14.0",
 		"multer": "^1.4.5-lts.1",
 		"openai": "^4.73.1",

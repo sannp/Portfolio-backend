@@ -9,25 +9,11 @@ jest.mock('../../src/services/googleGemini', () => ({
   available: true
 }));
 
-jest.mock('../../src/services/openAI', () => ({
+jest.mock('../../src/services/groqAPI', () => ({
   generateText: jest.fn(),
   analyzeText: jest.fn(),
   chat: jest.fn(),
-  embedText: jest.fn(),
-  generateImage: jest.fn(),
   available: true
-}));
-
-jest.mock('../../src/services/grokAPI', () => ({
-  generateText: jest.fn(),
-  analyzeText: jest.fn(),
-  chat: jest.fn()
-}));
-
-jest.mock('../../src/services/anthropicService', () => ({
-  generateText: jest.fn(),
-  analyzeText: jest.fn(),
-  chat: jest.fn()
 }));
 
 jest.mock('config', () => ({
@@ -39,42 +25,26 @@ jest.mock('config', () => ({
         maxTokens: 1000,
         temperature: 0.7
       },
-      openai: {
-        model: 'gpt-4o-mini',
-        models: ['gpt-4o', 'gpt-4o-mini'],
-        maxTokens: 1000,
-        temperature: 0.7
-      },
-      grok: {
-        model: 'grok-2-1212',
-        models: ['grok-2-1212'],
-        maxTokens: 1000,
-        temperature: 0.7
-      },
-      anthropic: {
-        model: 'claude-3-sonnet-20240229',
-        models: ['claude-3-sonnet-20240229'],
+      groq: {
+        model: 'llama-3.3-70b-versatile',
+        models: ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile'],
         maxTokens: 1000,
         temperature: 0.7
       }
     };
 
     const config = {
-      'ai.defaultProvider': 'gemini',
+      'ai.defaultProvider': 'groq',
       'ai.providers': providers,
       'ai.providers.gemini': providers.gemini,
-      'ai.providers.openai': providers.openai,
-      'ai.providers.grok': providers.grok,
-      'ai.providers.anthropic': providers.anthropic
+      'ai.providers.groq': providers.groq
     };
     return config[key];
   })
 }));
 
 const gemini = require('../../src/services/googleGemini');
-const openai = require('../../src/services/openAI');
-const grok = require('../../src/services/grokAPI');
-const anthropic = require('../../src/services/anthropicService');
+const groq = require('../../src/services/groqAPI');
 
 describe('AIService', () => {
   beforeEach(() => {
@@ -83,95 +53,87 @@ describe('AIService', () => {
 
   describe('constructor', () => {
     test('should initialize providers in correct priority order', () => {
+      expect(AIService.providers).toHaveProperty('groq');
       expect(AIService.providers).toHaveProperty('gemini');
-      expect(AIService.providers).toHaveProperty('openai');
-      expect(AIService.providers).toHaveProperty('grok');
-      expect(AIService.providers).toHaveProperty('anthropic');
-      expect(AIService.providerPriority).toEqual(['gemini', 'openai', 'grok', 'anthropic']);
+      expect(AIService.providerPriority).toEqual(['groq', 'gemini']);
     });
 
     test('should set default provider from config', () => {
-      expect(AIService.defaultProvider).toBe('gemini');
+      expect(AIService.defaultProvider).toBe('groq');
     });
   });
 
   describe('_getProvidersToTry', () => {
     test('should return all providers in priority order when fallback is true', () => {
-      const result = AIService._getProvidersToTry('gemini', true);
-      expect(result).toEqual(['gemini', 'openai', 'grok', 'anthropic']);
+      const result = AIService._getProvidersToTry('groq', true);
+      expect(result).toEqual(['groq', 'gemini']);
     });
 
     test('should return only requested provider when fallback is false', () => {
-      const result = AIService._getProvidersToTry('openai', false);
-      expect(result).toEqual(['openai']);
+      const result = AIService._getProvidersToTry('gemini', false);
+      expect(result).toEqual(['gemini']);
     });
 
     test('should reorder providers when starting with non-default', () => {
-      const result = AIService._getProvidersToTry('anthropic', true);
-      // Should start with anthropic, then follow priority for others
-      expect(result[0]).toBe('anthropic');
-      expect(result).toContain('gemini');
-      expect(result).toContain('openai');
-      expect(result).toContain('grok');
+      const result = AIService._getProvidersToTry('gemini', true);
+      // Should start with gemini, then follow priority for others
+      expect(result[0]).toBe('gemini');
+      expect(result).toContain('groq');
     });
   });
 
   describe('generateText', () => {
     test('should return success response with provider and model', async () => {
-      gemini.generateText.mockResolvedValue({
+      groq.generateText.mockResolvedValue({
         content: 'Hello!',
-        model: 'gemini-1.5-pro',
+        model: 'llama-3.3-70b-versatile',
         usage: { input_tokens: 10, output_tokens: 5 }
       });
 
-      const result = await AIService.generateText('Say hello', { provider: 'gemini' });
+      const result = await AIService.generateText('Say hello', { provider: 'groq' });
 
       expect(result.success).toBe(true);
-      expect(result.provider).toBe('gemini');
-      expect(result.model).toBe('gemini-1.5-pro');
+      expect(result.provider).toBe('groq');
+      expect(result.model).toBe('llama-3.3-70b-versatile');
       expect(result.data.content).toBe('Hello!');
-      expect(gemini.generateText).toHaveBeenCalledWith('Say hello', { provider: 'gemini' });
+      expect(groq.generateText).toHaveBeenCalledWith('Say hello', { provider: 'groq' });
     });
 
     test('should fallback to next provider when first fails', async () => {
-      gemini.generateText.mockRejectedValue(new Error('Gemini quota exceeded'));
-      openai.generateText.mockResolvedValue({
-        content: 'Hello from OpenAI',
-        model: 'gpt-4o-mini',
+      groq.generateText.mockRejectedValue(new Error('Groq quota exceeded'));
+      gemini.generateText.mockResolvedValue({
+        content: 'Hello from Gemini',
+        model: 'gemini-1.5-pro',
         usage: { prompt_tokens: 10, completion_tokens: 5 }
       });
 
       const result = await AIService.generateText('Say hello');
 
       expect(result.success).toBe(true);
-      expect(result.provider).toBe('openai');
+      expect(result.provider).toBe('gemini');
+      expect(groq.generateText).toHaveBeenCalled();
       expect(gemini.generateText).toHaveBeenCalled();
-      expect(openai.generateText).toHaveBeenCalled();
     });
 
     test('should try all providers and throw when all fail', async () => {
+      groq.generateText.mockRejectedValue(new Error('Groq error'));
       gemini.generateText.mockRejectedValue(new Error('Gemini error'));
-      openai.generateText.mockRejectedValue(new Error('OpenAI error'));
-      grok.generateText.mockRejectedValue(new Error('Grok error'));
-      anthropic.generateText.mockRejectedValue(new Error('Anthropic error'));
 
       await expect(AIService.generateText('Say hello')).rejects.toThrow('All AI providers failed');
 
+      expect(groq.generateText).toHaveBeenCalled();
       expect(gemini.generateText).toHaveBeenCalled();
-      expect(openai.generateText).toHaveBeenCalled();
-      expect(grok.generateText).toHaveBeenCalled();
-      expect(anthropic.generateText).toHaveBeenCalled();
     });
 
     test('should not fallback when fallback option is false', async () => {
-      gemini.generateText.mockRejectedValue(new Error('Gemini error'));
+      groq.generateText.mockRejectedValue(new Error('Groq error'));
 
       await expect(
-        AIService.generateText('Say hello', { provider: 'gemini', fallback: false })
+        AIService.generateText('Say hello', { provider: 'groq', fallback: false })
       ).rejects.toThrow('All AI providers failed');
 
-      expect(gemini.generateText).toHaveBeenCalled();
-      expect(openai.generateText).not.toHaveBeenCalled();
+      expect(groq.generateText).toHaveBeenCalled();
+      expect(gemini.generateText).not.toHaveBeenCalled();
     });
   });
 
@@ -183,110 +145,102 @@ describe('AIService', () => {
         { role: 'user', content: 'How are you?' }
       ];
 
-      gemini.chat.mockResolvedValue({
+      groq.chat.mockResolvedValue({
         content: 'I am doing well!',
-        model: 'gemini-1.5-pro'
+        model: 'llama-3.3-70b-versatile'
       });
 
-      const result = await AIService.chat(messages, { provider: 'gemini' });
+      const result = await AIService.chat(messages, { provider: 'groq' });
 
       expect(result.success).toBe(true);
-      expect(result.provider).toBe('gemini');
+      expect(result.provider).toBe('groq');
       expect(result.data.content).toBe('I am doing well!');
     });
 
     test('should fallback when provider lacks chat capability', async () => {
       const messages = [{ role: 'user', content: 'Hello' }];
 
-      // Mock gemini without chat method
-      const originalChat = gemini.chat;
-      gemini.chat = undefined;
+      // Mock groq without chat method
+      const originalChat = groq.chat;
+      groq.chat = undefined;
 
-      openai.chat.mockResolvedValue({
-        content: 'Hello from OpenAI',
-        model: 'gpt-4o-mini'
+      gemini.chat.mockResolvedValue({
+        content: 'Hello from Gemini',
+        model: 'gemini-1.5-pro'
       });
 
       const result = await AIService.chat(messages);
 
       expect(result.success).toBe(true);
-      expect(result.provider).toBe('openai');
+      expect(result.provider).toBe('gemini');
 
       // Restore
-      gemini.chat = originalChat;
+      groq.chat = originalChat;
     });
   });
 
   describe('embedText', () => {
     test('should generate embeddings successfully', async () => {
-      openai.embedText.mockResolvedValue({
+      gemini.embedText.mockResolvedValue({
         embedding: [0.1, 0.2, 0.3],
-        model: 'text-embedding-ada-002'
+        model: 'gemini-embedding'
       });
 
-      const result = await AIService.embedText('Hello world', { provider: 'openai' });
+      const result = await AIService.embedText('Hello world', { provider: 'gemini' });
 
       expect(result.success).toBe(true);
-      expect(result.provider).toBe('openai');
+      expect(result.provider).toBe('gemini');
       expect(result.data.embedding).toEqual([0.1, 0.2, 0.3]);
     });
 
     test('should skip providers without embed capability', async () => {
-      // grok and anthropic don't have embedText
-      grok.embedText = undefined;
-      anthropic.embedText = undefined;
+      // groq doesn't have embedText
+      groq.embedText = undefined;
 
-      gemini.embedText = jest.fn().mockRejectedValue(new Error('Gemini embed error'));
-      openai.embedText.mockResolvedValue({
+      gemini.embedText.mockResolvedValue({
         embedding: [0.1, 0.2, 0.3],
-        model: 'text-embedding-ada-002'
+        model: 'gemini-embedding'
       });
 
       const result = await AIService.embedText('Hello');
 
       expect(result.success).toBe(true);
-      expect(result.provider).toBe('openai');
+      expect(result.provider).toBe('gemini');
     });
   });
 
   describe('analyzeText', () => {
     test('should analyze text successfully', async () => {
-      gemini.analyzeText.mockResolvedValue({
+      groq.analyzeText.mockResolvedValue({
         sentiment: 'positive',
         themes: ['greeting'],
         confidence: 0.95
       });
 
-      const result = await AIService.analyzeText('I love this product!', { provider: 'gemini' });
+      const result = await AIService.analyzeText('I love this product!', { provider: 'groq' });
 
       expect(result.success).toBe(true);
-      expect(result.provider).toBe('gemini');
+      expect(result.provider).toBe('groq');
       expect(result.data.sentiment).toBe('positive');
     });
   });
 
   describe('checkAvailability', () => {
     test('should return availability status for all providers', async () => {
-      gemini.generateText.mockResolvedValue({ content: 'Hi', model: 'gemini-pro' });
-      openai.generateText.mockRejectedValue(new Error('OpenAI quota exceeded'));
-      grok.generateText.mockResolvedValue({ content: 'Hello', model: 'grok-beta' });
-      anthropic.generateText.mockRejectedValue(new Error('Anthropic API Error'));
+      groq.generateText.mockResolvedValue({ content: 'Hi', model: 'llama-3.3-70b-versatile' });
+      gemini.generateText.mockRejectedValue(new Error('Gemini quota exceeded'));
 
       const result = await AIService.checkAvailability();
 
       expect(result.overallAvailable).toBe(true);
-      expect(result.providers.gemini.available).toBe(true);
-      expect(result.providers.openai.available).toBe(false);
-      expect(result.providers.openai.error).toContain('quota exceeded');
-      expect(result.providers.grok.available).toBe(true);
-      expect(result.providers.anthropic.available).toBe(false);
+      expect(result.providers.groq.available).toBe(true);
+      expect(result.providers.gemini.available).toBe(false);
+      expect(result.providers.gemini.error).toContain('quota exceeded');
     });
 
     test('should return overallAvailable as false when all providers fail', async () => {
+      groq.generateText.mockRejectedValue(new Error('Error'));
       gemini.generateText.mockRejectedValue(new Error('Error'));
-      openai.generateText.mockRejectedValue(new Error('Error'));
-      grok.generateText.mockRejectedValue(new Error('Error'));
-      anthropic.generateText.mockRejectedValue(new Error('Error'));
 
       const result = await AIService.checkAvailability();
 
@@ -319,20 +273,16 @@ describe('AIService', () => {
   describe('getAvailableProviders', () => {
     test('should return array of provider names', () => {
       const providers = AIService.getAvailableProviders();
+      expect(providers).toContain('groq');
       expect(providers).toContain('gemini');
-      expect(providers).toContain('openai');
-      expect(providers).toContain('grok');
-      expect(providers).toContain('anthropic');
     });
   });
 
   describe('getAllProviderModels', () => {
     test('should return models for all providers in priority order', () => {
       const models = AIService.getAllProviderModels();
+      expect(models.groq).toEqual(['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile']);
       expect(models.gemini).toEqual(['gemini-1.5-pro', 'gemini-1.5-flash']);
-      expect(models.openai).toEqual(['gpt-4o', 'gpt-4o-mini']);
-      expect(models.grok).toEqual(['grok-2-1212']);
-      expect(models.anthropic).toEqual(['claude-3-sonnet-20240229']);
     });
   });
 });

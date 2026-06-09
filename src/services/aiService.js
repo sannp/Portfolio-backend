@@ -1,18 +1,18 @@
 const config = require('config');
-const openAIService = require('./openAI');
+// const openAIService = require('./openAI');
 const geminiService = require('./googleGemini');
-const grokService = require('./grokAPI');
-const anthropicService = require('./anthropicService');
+const groqService = require('./groqAPI');
+// const anthropicService = require('./anthropicService');
 
 class AIService {
   constructor() {
     this.providers = {
-      gemini: geminiService,
-      openai: openAIService,
-      grok: grokService,
-      anthropic: anthropicService
+      groq: groqService,
+      gemini: geminiService
+      // openai: openAIService,
+      // anthropic: anthropicService
     };
-    this.providerPriority = ['gemini', 'openai', 'grok', 'anthropic'];
+    this.providerPriority = ['groq', 'gemini'];
     this.defaultProvider = config.get('ai.defaultProvider');
   }
 

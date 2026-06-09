@@ -27,7 +27,7 @@
     }
   },
   "ai": {
-    "defaultProvider": "gemini",
+    "defaultProvider": "groq",
     "providers": {
       "gemini": {
         "apiKey": "",
@@ -43,10 +43,10 @@
         "maxTokens": 1000,
         "temperature": 0.7
       },
-      "grok": {
+      "groq": {
         "apiKey": "",
-        "model": "grok-2-1212",
-        "models": ["grok-2-1212", "grok-beta", "grok-2-vision-1212"],
+        "model": "llama-3.3-70b-versatile",
+        "models": ["llama-3.3-70b-versatile", "llama-3.1-70b-versatile", "mixtral-8x7b-32768"],
         "maxTokens": 1000,
         "temperature": 0.7
       },

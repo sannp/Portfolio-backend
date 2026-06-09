@@ -5,7 +5,7 @@ class GeminiService {
   constructor() {
     const geminiConfig = config.get('ai.providers.gemini');
     const apiKey = process.env.GEMINI_API_KEY || geminiConfig.apiKey;
-    
+
     if (!apiKey) {
       this.client = null;
       this.available = false;
@@ -14,15 +14,44 @@ class GeminiService {
       this.available = true;
     }
     this.defaultModel = geminiConfig.model;
+    this.maxRetries = 3;
+    this.retryDelay = 1000; // 1 second
+  }
+
+  async _retryWithBackoff(fn, context = 'API call') {
+    let lastError;
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (error) {
+        lastError = error;
+        const errorMessage = error.message || '';
+        const isRetryableError =
+          errorMessage.includes('503') ||
+          errorMessage.includes('Service Unavailable') ||
+          errorMessage.toLowerCase().includes('high demand') ||
+          errorMessage.toLowerCase().includes('rate limit') ||
+          error.status === 503 ||
+          error.response?.status === 503;
+
+        if (!isRetryableError || attempt === this.maxRetries) {
+          throw error;
+        }
+
+        console.warn(`[Gemini] ${context} failed (attempt ${attempt + 1}/${this.maxRetries + 1}): ${errorMessage}. Retrying in ${this.retryDelay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, this.retryDelay));
+      }
+    }
+    throw lastError;
   }
 
   async generateText(prompt, options = {}) {
     if (!this.client) {
       throw new Error('Gemini API key not configured');
     }
-    try {
-      const model = this.client.getGenerativeModel({ 
-        model: options.model || this.defaultModel 
+    return this._retryWithBackoff(async () => {
+      const model = this.client.getGenerativeModel({
+        model: options.model || this.defaultModel
       });
 
       const result = await model.generateContent(prompt);
@@ -33,9 +62,7 @@ class GeminiService {
         content: text,
         model: options.model || this.defaultModel
       };
-    } catch (error) {
-      throw new Error(`Gemini API Error: ${error.message}`);
-    }
+    }, 'generateText');
   }
 
   async generateImage(prompt, options = {}) {
@@ -48,19 +75,19 @@ class GeminiService {
     if (!this.client) {
       throw new Error('Gemini API key not configured');
     }
-    try {
-      const model = this.client.getGenerativeModel({ 
-        model: options.model || this.defaultModel 
+    return this._retryWithBackoff(async () => {
+      const model = this.client.getGenerativeModel({
+        model: options.model || this.defaultModel
       });
 
-      const analysisPrompt = options.analysisPrompt || 
-        `Analyze the following text for sentiment, key themes, and classification. 
+      const analysisPrompt = options.analysisPrompt ||
+        `Analyze the following text for sentiment, key themes, and classification.
         Provide a structured JSON response with the following fields:
         - sentiment: (positive/negative/neutral)
         - themes: array of key themes
         - classification: category of the text
         - confidence: confidence score (0-1)
-        
+
         Text to analyze: "${text}"`;
 
       const result = await model.generateContent(analysisPrompt);
@@ -72,19 +99,17 @@ class GeminiService {
       } catch {
         return { rawAnalysis: analysis };
       }
-    } catch (error) {
-      throw new Error(`Gemini Text Analysis Error: ${error.message}`);
-    }
+    }, 'analyzeText');
   }
 
   async embedText(text, options = {}) {
     if (!this.client) {
       throw new Error('Gemini API key not configured');
     }
-    try {
+    return this._retryWithBackoff(async () => {
       const modelName = options.model || 'gemini-embedding-001';
-      const model = this.client.getGenerativeModel({ 
-        model: modelName 
+      const model = this.client.getGenerativeModel({
+        model: modelName
       });
 
       let result;
@@ -103,18 +128,16 @@ class GeminiService {
         embedding: embedding.values,
         model: modelName
       };
-    } catch (error) {
-      throw new Error(`Gemini Embedding Error: ${error.message}`);
-    }
+    }, 'embedText');
   }
 
   async chat(messages, options = {}) {
     if (!this.client) {
       throw new Error('Gemini API key not configured');
     }
-    try {
-      const model = this.client.getGenerativeModel({ 
-        model: options.model || this.defaultModel 
+    return this._retryWithBackoff(async () => {
+      const model = this.client.getGenerativeModel({
+        model: options.model || this.defaultModel
       });
 
       const chat = model.startChat({
@@ -136,9 +159,7 @@ class GeminiService {
         content: response.text(),
         model: options.model || this.defaultModel
       };
-    } catch (error) {
-      throw new Error(`Gemini Chat Error: ${error.message}`);
-    }
+    }, 'chat');
   }
 }
 
