@@ -23,4 +23,5 @@ const BadgesSchema = mongoose.Schema({
 	},
 });
 
-module.exports = mongoose.model("Badges", BadgesSchema);
+const portfolioDb = mongoose.connection.useDb('portfolio');
+module.exports = portfolioDb.model("Badges", BadgesSchema);

@@ -23,4 +23,5 @@ const CategoriesSchema = mongoose.Schema({
 	},
 });
 
-module.exports = mongoose.model("Categories", CategoriesSchema);
+const portfolioDb = mongoose.connection.useDb('portfolio');
+module.exports = portfolioDb.model("Categories", CategoriesSchema);

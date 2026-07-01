@@ -39,4 +39,5 @@ const DesignsSchema = mongoose.Schema({
 	},
 });
 
-module.exports = mongoose.model("Designs", DesignsSchema);
+const portfolioDb = mongoose.connection.useDb('portfolio');
+module.exports = portfolioDb.model("Designs", DesignsSchema);
