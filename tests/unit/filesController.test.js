@@ -26,7 +26,7 @@ jest.mock('../../src/database/dbConfig', () => ({
 }));
 
 const dbManager = require('../../src/database/dbConfig');
-const filesController = require('../../src/api/projects/portfolio/controllers/filesController');
+const filesController = require('../../src/api/projects/personal/controllers/filesController');
 
 describe('Files Controller', () => {
   let app;

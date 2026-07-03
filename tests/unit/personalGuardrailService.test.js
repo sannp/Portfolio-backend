@@ -3,7 +3,7 @@
  * Tests out-of-scope question detection and PII filtering
  */
 
-const guardrailService = require('../../src/api/projects/portfolio/services/guardrailService');
+const guardrailService = require('../../src/api/projects/personal/services/guardrailService');
 
 describe('GuardrailService', () => {
   describe('checkQuestion', () => {

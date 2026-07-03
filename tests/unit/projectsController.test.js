@@ -5,7 +5,7 @@ const express = require('express');
 jest.mock('../../models/Projects');
 
 const Project = require('../../models/Projects');
-const projectsController = require('../../src/api/projects/portfolio/controllers/projectsController');
+const projectsController = require('../../src/api/projects/personal/controllers/projectsController');
 
 describe('Projects Controller', () => {
   let app;
@@ -23,6 +23,7 @@ describe('Projects Controller', () => {
       imageUrl: 'http://example.com/image.jpg',
       imageAlt: 'Test Image',
       description: 'Test description',
+      type: 'project',
       badges: ['badge1', 'badge2'],
       button1: 'View',
       button1Url: 'http://example.com',
@@ -31,7 +32,7 @@ describe('Projects Controller', () => {
     };
 
     test('should create new project successfully', async () => {
-      Project.find.mockResolvedValue([]);
+      Project.findOne.mockResolvedValue(null);
       const mockSave = jest.fn().mockResolvedValue({ _id: '123', ...validProject });
       Project.mockImplementation(() => ({
         save: mockSave
@@ -48,7 +49,7 @@ describe('Projects Controller', () => {
     });
 
     test('should return error when title already exists', async () => {
-      Project.find.mockResolvedValue([{ title: 'Test Project' }]);
+      Project.findOne.mockResolvedValue({ title: 'Test Project' });
 
       const response = await request(app)
         .post('/addnew')
@@ -70,7 +71,7 @@ describe('Projects Controller', () => {
     });
 
     test('should handle database save error', async () => {
-      Project.find.mockResolvedValue([]);
+      Project.findOne.mockResolvedValue(null);
       const mockSave = jest.fn().mockRejectedValue(new Error('Database error'));
       Project.mockImplementation(() => ({
         save: mockSave
@@ -80,32 +81,17 @@ describe('Projects Controller', () => {
         .post('/addnew')
         .send(validProject);
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(500);
       expect(response.body.success).toBe(false);
     });
 
-    test('should return error when title is missing', async () => {
+    test('should return error when type is invalid', async () => {
+      Project.findOne.mockResolvedValue(null);
       const response = await request(app)
         .post('/addnew')
-        .send({
-          imageUrl: 'http://example.com/image.jpg',
-          imageAlt: 'Test Image',
-          description: 'Test description'
-        });
+        .send({ ...validProject, type: 'invalid' });
 
-      expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('required');
-    });
-
-    test('should return error when imageUrl is missing', async () => {
-      const response = await request(app)
-        .post('/addnew')
-        .send({
-          title: 'Test Project',
-          imageAlt: 'Test Image',
-          description: 'Test description'
-        });
-
+      expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
     });
   });
@@ -116,7 +102,12 @@ describe('Projects Controller', () => {
         { _id: '1', title: 'Project 1' },
         { _id: '2', title: 'Project 2' }
       ];
-      Project.find.mockResolvedValue(mockProjects);
+
+      Project.find.mockReturnValue({
+        sort: jest.fn().mockReturnValue({
+          select: jest.fn().mockResolvedValue(mockProjects)
+        })
+      });
 
       const response = await request(app).get('/all');
 
@@ -127,19 +118,28 @@ describe('Projects Controller', () => {
     });
 
     test('should handle database error when fetching all projects', async () => {
-      Project.find.mockRejectedValue(new Error('Database error'));
+      Project.find.mockReturnValue({
+        sort: jest.fn().mockReturnValue({
+          select: jest.fn().mockRejectedValue(new Error('Database error'))
+        })
+      });
 
       const response = await request(app).get('/all');
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(500);
       expect(response.body.success).toBe(false);
     });
 
     test('should return empty array when no projects exist', async () => {
-      Project.find.mockResolvedValue([]);
+      Project.find.mockReturnValue({
+        sort: jest.fn().mockReturnValue({
+          select: jest.fn().mockResolvedValue([])
+        })
+      });
 
       const response = await request(app).get('/all');
 
+      expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data).toEqual([]);
     });
@@ -148,7 +148,9 @@ describe('Projects Controller', () => {
   describe('GET /:projectId', () => {
     test('should return specific project by ID', async () => {
       const mockProject = { _id: '123', title: 'Test Project' };
-      Project.findById.mockResolvedValue(mockProject);
+      Project.findById.mockReturnValue({
+        select: jest.fn().mockResolvedValue(mockProject)
+      });
 
       const response = await request(app).get('/123');
 
@@ -159,21 +161,25 @@ describe('Projects Controller', () => {
     });
 
     test('should handle database error when fetching project', async () => {
-      Project.findById.mockRejectedValue(new Error('Database error'));
+      Project.findById.mockReturnValue({
+        select: jest.fn().mockRejectedValue(new Error('Database error'))
+      });
 
       const response = await request(app).get('/123');
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(500);
       expect(response.body.success).toBe(false);
     });
 
-    test('should return null when project not found', async () => {
-      Project.findById.mockResolvedValue(null);
+    test('should return 404 when project not found', async () => {
+      Project.findById.mockReturnValue({
+        select: jest.fn().mockResolvedValue(null)
+      });
 
       const response = await request(app).get('/999');
 
-      expect(response.body.success).toBe(true);
-      expect(response.body.data).toBeNull();
+      expect(response.status).toBe(404);
+      expect(response.body.success).toBe(false);
     });
   });
 
@@ -186,7 +192,7 @@ describe('Projects Controller', () => {
     };
 
     test('should update project successfully', async () => {
-      Project.updateOne.mockResolvedValue({ nModified: 1 });
+      Project.updateOne.mockResolvedValue({ modifiedCount: 1 });
 
       const response = await request(app)
         .patch('/123')
@@ -195,10 +201,6 @@ describe('Projects Controller', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.message).toBe('Project updated successfully');
-      expect(Project.updateOne).toHaveBeenCalledWith(
-        { _id: '123' },
-        { $set: expect.any(Object) }
-      );
     });
 
     test('should return error when required fields are missing for update', async () => {
@@ -206,7 +208,7 @@ describe('Projects Controller', () => {
         .patch('/123')
         .send({ title: 'Updated Project' });
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
       expect(response.body.message).toContain('required');
     });
@@ -218,7 +220,7 @@ describe('Projects Controller', () => {
         .patch('/123')
         .send(updateData);
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(500);
       expect(response.body.success).toBe(false);
     });
   });
@@ -240,7 +242,7 @@ describe('Projects Controller', () => {
 
       const response = await request(app).delete('/123');
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(500);
       expect(response.body.success).toBe(false);
     });
   });

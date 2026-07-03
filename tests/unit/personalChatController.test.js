@@ -3,17 +3,17 @@
  * Tests chat message processing and conversation management
  */
 
-const { chatController } = require('../../src/api/projects/portfolio/controllers/chatController');
+const { chatController } = require('../../src/api/projects/personal/controllers/chatController');
 
 // Mock dependencies
 jest.mock('../../src/database/dbConfig');
-jest.mock('../../src/api/projects/portfolio/services/guardrailService');
-jest.mock('../../src/api/projects/portfolio/services/contextBuilder');
+jest.mock('../../src/api/projects/personal/services/guardrailService');
+jest.mock('../../src/api/projects/personal/services/contextBuilder');
 jest.mock('../../src/services/aiService');
 
 const dbManager = require('../../src/database/dbConfig');
-const guardrailService = require('../../src/api/projects/portfolio/services/guardrailService');
-const contextBuilder = require('../../src/api/projects/portfolio/services/contextBuilder');
+const guardrailService = require('../../src/api/projects/personal/services/guardrailService');
+const contextBuilder = require('../../src/api/projects/personal/services/contextBuilder');
 const aiService = require('../../src/services/aiService');
 
 describe('ChatController', () => {

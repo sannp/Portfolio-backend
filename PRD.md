@@ -27,10 +27,9 @@ The **Base Server Template** is a scalable Node.js/Express boilerplate designed 
 | Developer | Create new project without boilerplate setup | Clone template, configure env, start developing in 5 minutes |
 | Developer | Switch between databases per project | Config selects MongoDB or PostgreSQL per project |
 | Developer | Use AI services with unified API | Single endpoint works with OpenAI, Gemini, or Grok |
-| Admin | Add new projects with duplicate title prevention | POST /portfolio/projects/addnew returns error if title exists |
-| Admin | Upload project images up to 20MB | POST /portfolio/files/upload accepts jpeg/jpg/png/gif |
-| Visitor | View designs sorted by newest first | GET /portfolio/designs/all returns descending date order |
-| Admin | Delete blog posts without update capability | DELETE /portfolio/blogposts/:id removes post permanently |
+| Admin | Add new projects with duplicate title prevention | POST /api/personal/projects/addnew returns error if title exists |
+| Admin | Upload project images up to 20MB | POST /api/personal/files/upload accepts jpeg/jpg/png/gif |
+| Admin | Delete blog posts without update capability | DELETE /api/personal/blogposts/:id removes post permanently |
 | Developer | Receive consistent API responses | All endpoints return `{success, message, data}` format |
 | Developer | Get AI-generated content analysis | POST /api/v1/ai/analyze returns sentiment/themes |
 | Developer | Generate AI images for content | POST /api/v1/ai/image returns image URLs |
@@ -166,10 +165,10 @@ All endpoints return a consistent JSON structure:
 | POST | /analyze | Analyze text sentiment/themes | prompt, options{provider} |
 | POST | /image | Generate images | prompt, options{provider, size} |
 
-#### Portfolio Project (/api/v1/portfolio)
+#### Personal Project (/api/personal)
 | Method | Endpoint | Description | Body |
 |--------|----------|-------------|------|
-| GET | / | Portfolio project info | - |
+| GET | / | Personal project info | - |
 | POST | /projects/addnew | Create new project | title, description, imageUrl, imageAlt, badges, buttons |
 | GET | /projects/all | Get all projects | - |
 | GET | /projects/:id | Get specific project | - |
@@ -179,29 +178,15 @@ All endpoints return a consistent JSON structure:
 | GET | /files/all | List all uploaded files | - |
 | GET | /files/image/:filename | Get image by filename | - |
 | DELETE | /files/:id | Delete file by ID | - |
-
-#### Additional Portfolio Endpoints
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | /designs/addnew | Create design (checks for duplicates) |
-| GET | /designs/all | List designs (sorted by createdDate desc) |
-| GET | /designs/:id | Get specific design |
-| PATCH | /designs/:id | Update design |
-| DELETE | /designs/:id | Delete design |
-| POST | /badges/addnew | Create badge (auto-generates ID) |
-| GET | /badges/all | List all badges |
-| GET | /badges/:id | Get specific badge |
-| PATCH | /badges/:id | Update badge |
-| DELETE | /badges/:id | Delete badge |
-| POST | /categories/addnew | Create category (auto-generates ID) |
-| GET | /categories/all | List all categories |
-| GET | /categories/:id | Get specific category |
-| PATCH | /categories/:id | Update category |
-| DELETE | /categories/:id | Delete category |
 | POST | /blogposts/addnew | Create blog post |
 | GET | /blogposts/all | List all blog posts |
 | GET | /blogposts/:id | Get specific blog post |
 | DELETE | /blogposts/:id | Delete blog post (no PATCH) |
+| GET | /chat | Recruiter chat metadata | - |
+| POST | /chat/message | Send recruiter chat message | message, sessionId |
+| GET | /chat/history/:sessionId | Get session chat history | - |
+| DELETE | /chat/history/:sessionId | Clear session chat history | - |
+| GET | /chat/health | Check recruiter chatbot health | - |
 
 ---
 
@@ -210,6 +195,7 @@ All endpoints return a consistent JSON structure:
 ### 7.1 Projects Schema
 ```javascript
 {
+  type: String (required, enum: ["design", "project"]),
   title: String (required),
   description: String (required),
   imageUrl: String (required),
@@ -223,30 +209,7 @@ All endpoints return a consistent JSON structure:
 }
 ```
 
-### 7.2 Designs Schema
-*Identical to Projects Schema*
-
-### 7.3 Badges Schema
-```javascript
-{
-  title: String (required),
-  id: String (required, auto-generated: array.length + 1),
-  bgColor: String (required),
-  color: String (default: "#fffff"),
-  createdDate: Date (default: Date.now)
-}
-```
-
-### 7.4 Categories Schema
-```javascript
-{
-  title: String (required),
-  value: String (required),
-  id: String (required, auto-generated: array.length + 1),
-  category: String (required),
-  createdDate: Date (default: Date.now)
-}
-```
+*Note: Designs, Badges, and Categories schemas have been deprecated.*
 
 ### 7.5 BlogPosts Schema
 ```javascript
@@ -338,30 +301,28 @@ base-server-template/
 │   └── production.json       # Production overrides
 ├── src/
 │   ├── api/
-│   │   └── v1/
-│   │       └── projects/
-│   │           └── portfolio/
-│   │               ├── routes.js
-│   │               └── controllers/
-│   │                   ├── projectsController.js
-│   │                   ├── designsController.js
-│   │                   ├── badgesController.js
-│   │                   ├── categoriesController.js
-│   │                   ├── blogpostsController.js
-│   │                   └── filesController.js
+│   │   ├── projects/
+│   │   │   └── personal/
+│   │   │       ├── routes.js
+│   │   │       ├── controllers/
+│   │   │       │   ├── watchlistController.js
+│   │   │       │   ├── projectsController.js
+│   │   │       │   ├── blogpostsController.js
+│   │   │       │   └── filesController.js
+│   │   │       └── services/
+│   │   │           ├── chunkingService.js
+│   │   │           ├── contextBuilder.js
+│   │   │           └── embeddingService.js
+│   │   ├── ai/
+│   │   └── research/
 │   ├── database/
 │   │   └── dbConfig.js       # Multi-database manager
 │   ├── services/
 │   │   ├── aiService.js      # Unified AI service layer
-│   │   ├── openAI.js         # OpenAI integration
-│   │   ├── googleGemini.js   # Gemini integration
-│   │   └── grokAPI.js        # Grok integration
 │   └── app.js                # Express app configuration
-├── models/                    # Legacy Mongoose models
+├── models/                    # Mongoose models
 │   ├── Projects.js           # Project schema
-│   ├── Designs.js            # Design schema
-│   ├── Badges.js             # Badge schema
-│   ├── Categories.js         # Category schema
+│   ├── Watchlist.js          # Watchlist schema
 │   └── BlogPosts.js          # Blog post schema
 ├── routes/                    # Legacy routes (being migrated)
 ├── server.js                 # New server entry point
