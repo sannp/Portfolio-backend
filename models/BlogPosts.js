@@ -23,5 +23,4 @@ const BlogPostsSchema = mongoose.Schema({
 	},
 });
 
-const portfolioDb = mongoose.connection.useDb('portfolio');
-module.exports = portfolioDb.model("BlogPosts", BlogPostsSchema);
+module.exports = mongoose.model("BlogPosts", BlogPostsSchema);

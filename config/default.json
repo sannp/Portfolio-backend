@@ -89,14 +89,12 @@
     }
   },
   "projects": {
-    "portfolio": {
-      "database": "mongodb",
+    "personal": {
+      "database": "personal",
       "enabled": true,
       "routes": [
+        "watchlist",
         "projects",
-        "designs",
-        "badges",
-        "categories",
         "blogposts",
         "files",
         "chat"
@@ -119,13 +117,6 @@
           "fallbackToKeywords": true
         }
       }
-    },
-    "personal": {
-      "database": "personal",
-      "enabled": true,
-      "routes": [
-        "watchlist"
-      ]
     }
   },
   "upload": {

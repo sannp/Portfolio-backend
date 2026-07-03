@@ -1,6 +1,11 @@
 const mongoose = require("mongoose");
 
 const ProjectsSchema = mongoose.Schema({
+	type: {
+		type: String,
+		required: true,
+		enum: ["design", "project"]
+	},
 	title: {
 		type: String,
 		required: true,
@@ -36,8 +41,7 @@ const ProjectsSchema = mongoose.Schema({
 	createdDate: {
 		type: Date,
 		default: Date.now,
-	},
+	}
 });
 
-const portfolioDb = mongoose.connection.useDb('portfolio');
-module.exports = portfolioDb.model("Projects", ProjectsSchema);
+module.exports = mongoose.model("Projects", ProjectsSchema);

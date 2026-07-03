@@ -6,7 +6,6 @@ const axios = require('axios');
 const dbManager = require('./database/dbConfig');
 
 // Import project routes
-const portfolioRoutes = require('./api/projects/portfolio/routes');
 const personalRoutes = require('./api/projects/personal/routes');
 const aiRoutes = require('./api/ai/routes');
 const researchRoutes = require('./api/research/routes');
@@ -66,7 +65,6 @@ app.get('/health', async (req, res) => {
 });
 
 // API routes
-app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/personal', personalRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/research', researchRoutes);
@@ -222,14 +220,11 @@ app.get('/', (req, res) => {
                 <div class="dot"></div>
                 API Online
             </div>
-            <h1>Portfolio Core</h1>
-            <p>High-performance backend serving AI integrations and portfolio management.</p>
+            <h1>Personal Core</h1>
+            <p>High-performance backend serving AI integrations and personal projects management.</p>
             
             <div class="btn-group">
-                <a href="/api/portfolio" class="btn btn-primary">
-                    Portfolio API
-                </a>
-                <a href="/api/personal" class="btn btn-secondary">
+                <a href="/api/personal" class="btn btn-primary">
                     Personal API
                 </a>
                 <a href="/health" class="btn btn-secondary">

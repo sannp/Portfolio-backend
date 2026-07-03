@@ -42,7 +42,4 @@ const WatchlistSchema = mongoose.Schema({
   },
 });
 
-const personalDb = mongoose.connection.useDb('personal');
-const Watchlist = personalDb.model("Watchlist", WatchlistSchema);
-
-module.exports = Watchlist;
+module.exports = mongoose.model("Watchlist", WatchlistSchema);
