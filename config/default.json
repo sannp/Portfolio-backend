@@ -103,8 +103,8 @@
         "enabled": true,
         "aiProvider": "gemini",
         "rag": {
-          "topK": 5,
-          "similarityThreshold": 0.7,
+          "topK": 40,
+          "similarityThreshold": 0.5,
           "embeddingDimension": 1536,
           "chunkSize": 300
         },

@@ -6,11 +6,16 @@
 
 const embeddingService = require('./embeddingService');
 const dbManager = require('#database/dbConfig');
+const config = require('config');
 
 class ContextBuilder {
   constructor() {
-    this.topK = 5; // Retrieve top 5 most relevant chunks
-    this.similarityThreshold = 0.7; // Minimum similarity score
+    this.topK = config.has('projects.personal.chat.rag.topK') 
+      ? config.get('projects.personal.chat.rag.topK') 
+      : 5;
+    this.similarityThreshold = config.has('projects.personal.chat.rag.similarityThreshold') 
+      ? config.get('projects.personal.chat.rag.similarityThreshold') 
+      : 0.5; // Lower default threshold (from 0.7 to 0.5) for Gemini embedding compatibility
   }
 
   /**

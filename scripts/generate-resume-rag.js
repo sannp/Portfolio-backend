@@ -12,14 +12,15 @@ const fs = require('fs');
 const pdfParse = require('pdf-parse');
 const aiService = require('../src/services/aiService');
 const dbManager = require('../src/database/dbConfig');
-const chunkingService = require('../src/api/projects/portfolio/services/chunkingService');
-const embeddingService = require('../src/api/projects/portfolio/services/embeddingService');
+const Projects = require('../models/Projects');
+const chunkingService = require('../src/api/projects/personal/services/chunkingService');
+const embeddingService = require('../src/api/projects/personal/services/embeddingService');
 
 // Load schema SQL
-const schemaSQL = fs.readFileSync('./src/api/projects/portfolio/database/schema.sql', 'utf8');
+const schemaSQL = fs.readFileSync('./src/api/projects/personal/database/schema.sql', 'utf8');
 
 // PDF file path - update this to your resume PDF location
-const PDF_FILE_PATH = './scripts/resume.pdf';
+const PDF_FILE_PATH = './scripts/resume_full.pdf';
 
 /**
  * Extract text from PDF file
@@ -44,7 +45,39 @@ async function extractTextFromPDF(filePath) {
  */
 async function parseResumeText(resumeText) {
   try {
-    const systemPrompt = `You are an expert in parsing resumes and extracting relevant information. Your task is to read through the provided resume text extracted from a PDF, identify key pieces of information, and organize them into the specified structured data format. The output should be a JSON object with the following fields: 'name', 'email', 'phone', 'linkedin', 'github', 'summary', 'experience' (an array of objects each containing 'title', 'company', 'start_date', 'end_date'), 'education' (an array of objects each containing 'degree', 'university', 'start_year', 'end_year'), 'skills' (an array), and 'projects' (an array of objects with 'name' and 'description'). Ensure that all extracted information is accurate and relevant to the resume content. If certain fields are not present in the resume, include them with empty values or appropriate placeholders. Return ONLY valid JSON, no markdown formatting.`;
+    const systemPrompt = `You are an expert in parsing resumes and extracting relevant information. Your task is to read through the provided resume text extracted from a PDF, identify key pieces of information, and organize them into the specified structured data format.
+
+The output should be a JSON object with the following fields:
+- 'name': String
+- 'email': String
+- 'phone': String
+- 'linkedin': String
+- 'github': String
+- 'summary': String
+- 'experience': An array of objects, each containing:
+  - 'title': String
+  - 'company': String
+  - 'duration': String (e.g. 'Oct 2020 - Present' or 'Jan 2018 - Sep 2020')
+  - 'description': String (a summary of what they did in this role)
+  - 'responsibilities': Array of Strings (key tasks and responsibilities)
+  - 'achievements': Array of Strings (major achievements and contributions)
+- 'education': An array of objects, each containing:
+  - 'degree': String
+  - 'institution': String (name of the school/university)
+  - 'field': String (field of study)
+  - 'graduationYear': String or Number (year of graduation)
+  - 'gpa': String or Number
+  - 'coursework': Array of Strings (relevant courses/subjects)
+- 'skills': An object where keys are skill categories (e.g. 'Languages', 'Frontend', 'Backend', 'Tools') and values are arrays of strings listing the specific skills in that category.
+- 'projects': An array of objects, each containing:
+  - 'name': String
+  - 'description': String
+  - 'technologies': Array of Strings (tools and tech stack used)
+  - 'role': String
+  - 'duration': String
+  - 'outcomes': Array of Strings (key achievements or outcomes of the project)
+
+Ensure that all extracted information is accurate and relevant to the resume content. If certain fields are not present in the resume, include them with empty values or appropriate placeholders. Return ONLY valid JSON, no markdown formatting.`;
 
     const userPrompt = `Parse the following resume text and extract structured data:\n\n${resumeText}`;
 
@@ -81,9 +114,47 @@ async function parseResumeText(resumeText) {
     
     const structuredData = JSON.parse(jsonString);
     
+    // Add notice period
+    structuredData.notice_period = '30 days';
+    
+    // Add total experience information to the summary as requested
+    if (structuredData.summary) {
+      structuredData.summary = `Total Experience: 6 years. ${structuredData.summary}`;
+    } else {
+      structuredData.summary = `Total Experience: 6 years.`;
+    }
+    
     return structuredData;
   } catch (error) {
     console.error('Error parsing resume text:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * Clear old resume data
+ */
+async function clearOldData() {
+  try {
+    const pool = dbManager.getPortfolioPostgresConnection();
+    if (!pool) {
+      throw new Error('Portfolio PostgreSQL connection not available');
+    }
+
+    console.log('🗑️  Clearing old resume data...');
+
+    // Delete all resume chunks first (due to foreign key constraint)
+    try {
+      await pool.query('DELETE FROM resume_chunks');
+    } catch (error) {
+      console.warn('Warning clearing chunks (table may not exist):', error.message);
+    }
+
+    // Delete all resumes
+    const result = await pool.query('DELETE FROM resumes');
+    console.log(`✅ Cleared ${result.rowCount} resume(s)\n`);
+  } catch (error) {
+    console.error('❌ Error clearing old data:', error.message);
     throw error;
   }
 }
@@ -104,15 +175,14 @@ async function initializeDatabaseSchema() {
     try {
       await pool.query(schemaSQL);
     } catch (error) {
-      // Ignore errors for IF NOT EXISTS statements
-      if (!error.message.includes('already exists')) {
-        console.warn('Schema warning:', error.message);
-      }
+      console.warn('Schema warning:', error.message);
+      console.warn('Schema error details:', error);
     }
 
     console.log('✅ Database schema initialized\n');
   } catch (error) {
     console.error('❌ Error initializing database schema:', error.message);
+    console.error('Error details:', error);
     throw error;
   }
 }
@@ -221,6 +291,9 @@ async function processResume(filePath) {
     // Initialize database schema
     await initializeDatabaseSchema();
 
+    // Clear old data
+    await clearOldData();
+
     // Step 1: Extract text from PDF
     console.log('📖 Extracting text from PDF...');
     const text = await extractTextFromPDF(filePath);
@@ -231,11 +304,36 @@ async function processResume(filePath) {
     console.log('🤖 Parsing resume text with AI...');
     const structuredData = await parseResumeText(text);
     console.log('✅ Resume parsed successfully');
+
+    // Fetch projects from MongoDB and append to structuredData
+    console.log('📚 Fetching projects from MongoDB...');
+    try {
+      const mongoProjects = await Projects.find({ type: 'project' }).sort({ createdDate: -1 });
+      if (!structuredData.projects) {
+        structuredData.projects = [];
+      }
+      
+      const formattedMongoProjects = mongoProjects.map(p => ({
+        name: p.title,
+        description: p.description,
+        technologies: p.badges || [],
+        role: "Developer / Creator",
+        duration: p.createdDate ? new Date(p.createdDate).getFullYear().toString() : "N/A",
+        outcomes: []
+      }));
+      
+      structuredData.projects = [...structuredData.projects, ...formattedMongoProjects];
+      console.log(`✅ Appended ${formattedMongoProjects.length} projects from MongoDB`);
+    } catch (err) {
+      console.warn('⚠️ Could not fetch projects from MongoDB:', err.message);
+    }
+
     console.log(`Name: ${structuredData.name || 'N/A'}`);
     console.log(`Email: ${structuredData.email || 'N/A'}`);
     console.log(`Experience: ${structuredData.experience?.length || 0} entries`);
     console.log(`Education: ${structuredData.education?.length || 0} entries`);
-    console.log(`Skills: ${structuredData.skills?.length || 0} skills\n`);
+    console.log(`Skills: ${Object.values(structuredData.skills || {}).reduce((acc, curr) => acc + (curr.length || 0), 0)} skills`);
+    console.log(`Projects: ${structuredData.projects?.length || 0} entries\n`);
 
     // Step 3: Save to database and generate RAG embeddings
     console.log('� Saving to database and generating RAG embeddings...');
