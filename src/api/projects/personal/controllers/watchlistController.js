@@ -21,6 +21,160 @@ router.get('/', async (req, res) => {
   }
 });
 
+// @route QUERY /
+// @desc Query watchlist items with pagination, isWatched status filtering, and sorting in request body
+router.query('/', async (req, res) => {
+  try {
+    const { isWatched, page, limit, sortBy, sortOrder } = req.body;
+    
+    const query = {};
+    if (isWatched !== undefined) {
+      query.isWatched = typeof isWatched === 'boolean' ? isWatched : isWatched === 'true';
+    }
+
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    // Sorting options
+    let sortOption = {};
+    if (sortBy) {
+      const allowedFields = {
+        rating: 'imdbRating',
+        imdbRating: 'imdbRating',
+        title: 'title',
+        date: 'createdDate',
+        createdDate: 'createdDate',
+      };
+      const field = allowedFields[sortBy];
+      if (field) {
+        const dir = (sortOrder === 'asc' || sortOrder === '1' || sortOrder === 1) ? 1 : -1;
+        sortOption[field] = dir;
+      }
+    }
+
+    const total = await Watchlist.countDocuments(query);
+    const watchlist = await Watchlist.find(query)
+      .sort(sortOption)
+      .skip(skip)
+      .limit(limitNum);
+
+    res.json({
+      success: true,
+      message: 'Watchlist queried successfully',
+      data: {
+        items: watchlist,
+        pagination: {
+          total,
+          page: pageNum,
+          limit: limitNum,
+          totalPages: Math.ceil(total / limitNum),
+        },
+      },
+    });
+  } catch (error) {
+    res.json({ success: false, message: error.message, data: null });
+  }
+});
+
+// @route GET /type/:type
+// @desc Get watchlist items filtered by type, optionally isWatched status, and genre/genres via query params with pagination and search
+router.get('/type/:type', async (req, res) => {
+  try {
+    const { type } = req.params;
+    const { isWatched, genre, genres, page, limit, search } = req.query;
+    
+    const query = { type };
+    if (isWatched !== undefined) {
+      query.isWatched = isWatched === 'true';
+    }
+    if (genre) {
+      query.genres = genre;
+    } else if (genres) {
+      const genreList = Array.isArray(genres) ? genres : genres.split(',');
+      query.genres = { $in: genreList };
+    }
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { genres: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    const total = await Watchlist.countDocuments(query);
+    const watchlist = await Watchlist.find(query).skip(skip).limit(limitNum);
+
+    res.json({
+      success: true,
+      message: `Watchlist items of type '${type}' retrieved successfully`,
+      data: {
+        items: watchlist,
+        pagination: {
+          total,
+          page: pageNum,
+          limit: limitNum,
+          totalPages: Math.ceil(total / limitNum),
+        },
+      },
+    });
+  } catch (error) {
+    res.json({ success: false, message: error.message, data: null });
+  }
+});
+
+// @route QUERY /type/:type
+// @desc Query watchlist items of a specific type, optionally filtering by isWatched and genre/genres in request body with pagination and search
+router.query('/type/:type', async (req, res) => {
+  try {
+    const { type } = req.params;
+    const { isWatched, genre, genres, page, limit, search } = req.body;
+    
+    const query = { type };
+    if (isWatched !== undefined) {
+      query.isWatched = typeof isWatched === 'boolean' ? isWatched : isWatched === 'true';
+    }
+    if (genre) {
+      query.genres = genre;
+    } else if (genres) {
+      const genreList = Array.isArray(genres) ? genres : genres.split(',');
+      query.genres = { $in: genreList };
+    }
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { genres: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    const total = await Watchlist.countDocuments(query);
+    const watchlist = await Watchlist.find(query).skip(skip).limit(limitNum);
+
+    res.json({
+      success: true,
+      message: `Watchlist items of type '${type}' retrieved successfully`,
+      data: {
+        items: watchlist,
+        pagination: {
+          total,
+          page: pageNum,
+          limit: limitNum,
+          totalPages: Math.ceil(total / limitNum),
+        },
+      },
+    });
+  } catch (error) {
+    res.json({ success: false, message: error.message, data: null });
+  }
+});
+
 // @route POST /
 // @desc Create new watchlist item
 router.post('/', async (req, res) => {
