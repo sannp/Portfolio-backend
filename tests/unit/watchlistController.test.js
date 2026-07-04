@@ -18,36 +18,7 @@ describe('Watchlist Controller Unit Tests', () => {
   });
 
   describe('GET /', () => {
-    test('should retrieve all watchlist items successfully', async () => {
-      const mockWatchlist = [
-        { _id: '1', title: 'Inception', imdbUrl: 'url1', type: 'movie' },
-        { _id: '2', title: 'Breaking Bad', imdbUrl: 'url2', type: 'series' }
-      ];
-      Watchlist.find.mockResolvedValue(mockWatchlist);
-
-      const response = await request(app).get('/');
-
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-      expect(response.body.message).toBe('Watchlist retrieved successfully');
-      expect(response.body.data).toEqual(mockWatchlist);
-      expect(Watchlist.find).toHaveBeenCalledTimes(1);
-    });
-
-    test('should handle errors when retrieving watchlist items', async () => {
-      Watchlist.find.mockRejectedValue(new Error('Database error'));
-
-      const response = await request(app).get('/');
-
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(false);
-      expect(response.body.message).toBe('Database error');
-      expect(response.body.data).toBeNull();
-    });
-  });
-
-  describe('QUERY /', () => {
-    test('should query watchlist items with pagination, filter, and sorting successfully', async () => {
+    test('should retrieve watchlist items with pagination, filter, and sorting successfully via query params', async () => {
       const mockWatchlist = [
         { _id: '1', title: 'Inception', imdbUrl: 'url1', type: 'movie', isWatched: true, imdbRating: '8.8' }
       ];
@@ -59,13 +30,11 @@ describe('Watchlist Controller Unit Tests', () => {
       };
       Watchlist.find.mockReturnValue(mockQuery);
 
-      const response = await request(app)
-        .query('/')
-        .send({ isWatched: true, page: 1, limit: 10, sortBy: 'rating', sortOrder: 'desc' });
+      const response = await request(app).get('/?isWatched=true&page=1&limit=10&sortBy=rating&sortOrder=desc');
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.message).toBe('Watchlist queried successfully');
+      expect(response.body.message).toBe('Watchlist retrieved successfully');
       expect(response.body.data.items).toEqual(mockWatchlist);
       expect(response.body.data.pagination).toEqual({
         total: 1,
@@ -79,12 +48,10 @@ describe('Watchlist Controller Unit Tests', () => {
       expect(mockQuery.limit).toHaveBeenCalledWith(10);
     });
 
-    test('should handle database errors when querying base watchlist', async () => {
+    test('should handle errors when retrieving watchlist items', async () => {
       Watchlist.countDocuments.mockRejectedValue(new Error('Database error'));
 
-      const response = await request(app)
-        .query('/')
-        .send({ isWatched: true });
+      const response = await request(app).get('/');
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(false);
@@ -169,56 +136,6 @@ describe('Watchlist Controller Unit Tests', () => {
       Watchlist.countDocuments.mockRejectedValue(new Error('Database error'));
 
       const response = await request(app).get('/type/movie');
-
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(false);
-      expect(response.body.message).toBe('Database error');
-      expect(response.body.data).toBeNull();
-    });
-  });
-
-  describe('QUERY /type/:type', () => {
-    test('should query watchlist items using HTTP QUERY method, request body filters and paginate successfully', async () => {
-      const mockWatchlist = [
-        { _id: '1', title: 'Inception', imdbUrl: 'url1', type: 'movie', isWatched: true }
-      ];
-      Watchlist.countDocuments.mockResolvedValue(1);
-      const mockQuery = {
-        skip: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockResolvedValue(mockWatchlist)
-      };
-      Watchlist.find.mockReturnValue(mockQuery);
-
-      const response = await request(app)
-        .query('/type/movie')
-        .send({ isWatched: true, genres: ['Action', 'Sci-Fi'], page: 1, limit: 10, search: 'Incept' });
-
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.items).toEqual(mockWatchlist);
-      expect(response.body.data.pagination).toEqual({
-        total: 1,
-        page: 1,
-        limit: 10,
-        totalPages: 1
-      });
-      expect(Watchlist.find).toHaveBeenCalledWith({
-        type: 'movie',
-        isWatched: true,
-        genres: { $in: ['Action', 'Sci-Fi'] },
-        $or: [
-          { title: { $regex: 'Incept', $options: 'i' } },
-          { genres: { $regex: 'Incept', $options: 'i' } }
-        ]
-      });
-    });
-
-    test('should handle database errors during query', async () => {
-      Watchlist.countDocuments.mockRejectedValue(new Error('Database error'));
-
-      const response = await request(app)
-        .query('/type/movie')
-        .send({ isWatched: true });
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(false);
