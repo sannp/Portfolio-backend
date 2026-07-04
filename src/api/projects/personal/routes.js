@@ -2,19 +2,15 @@ const express = require('express');
 const router = express.Router();
 
 // Import controllers
+const watchlistController = require('./controllers/watchlistController');
 const projectsController = require('./controllers/projectsController');
-const designsController = require('./controllers/designsController');
-const badgesController = require('./controllers/badgesController');
-const categoriesController = require('./controllers/categoriesController');
 const blogpostsController = require('./controllers/blogpostsController');
 const filesController = require('./controllers/filesController');
 const { router: chatController } = require('./controllers/chatController');
 
-// Project routes
+// Watchlist routes
+router.use('/watchlist', watchlistController);
 router.use('/projects', projectsController);
-router.use('/designs', designsController);
-router.use('/badges', badgesController);
-router.use('/categories', categoriesController);
 router.use('/blogposts', blogpostsController);
 router.use('/files', filesController);
 router.use('/chat', chatController);
@@ -23,15 +19,13 @@ router.use('/chat', chatController);
 router.get('/', (req, res) => {
   res.json({
     success: true,
-    message: 'Portfolio API v1',
+    message: 'Personal API v1',
     data: {
-      project: 'portfolio',
+      project: 'personal',
       version: '1.0.0',
       endpoints: [
+        '/watchlist',
         '/projects',
-        '/designs', 
-        '/badges',
-        '/categories',
         '/blogposts',
         '/files',
         '/chat'

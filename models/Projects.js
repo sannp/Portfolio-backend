@@ -1,6 +1,11 @@
 const mongoose = require("mongoose");
 
 const ProjectsSchema = mongoose.Schema({
+	type: {
+		type: String,
+		required: true,
+		enum: ["design", "project"]
+	},
 	title: {
 		type: String,
 		required: true,
@@ -36,7 +41,7 @@ const ProjectsSchema = mongoose.Schema({
 	createdDate: {
 		type: Date,
 		default: Date.now,
-	},
+	}
 });
 
 module.exports = mongoose.model("Projects", ProjectsSchema);

@@ -14,12 +14,13 @@ class DatabaseManager {
       const mongoOptions = config.get('database.mongodb.options');
       await mongoose.connect(mongoUri, mongoOptions);
       console.log('✅ MongoDB connected successfully');
-      
-      // Initialize GridFS
-      this.gfs = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
+
+      // Initialize GridFS on portfolio database
+      const portfolioDb = mongoose.connection.useDb('portfolio');
+      this.gfs = new mongoose.mongo.GridFSBucket(portfolioDb.db, {
         bucketName: config.get('upload.bucketName'),
       });
-      
+
       return mongoose.connection;
     } catch (error) {
       console.error('❌ MongoDB connection error:', error);

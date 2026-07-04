@@ -3,7 +3,7 @@
  * Tests resume data chunking functionality
  */
 
-const chunkingService = require('../../src/api/projects/portfolio/services/chunkingService');
+const chunkingService = require('../../src/api/projects/personal/services/chunkingService');
 
 describe('ChunkingService', () => {
   describe('chunkResume', () => {

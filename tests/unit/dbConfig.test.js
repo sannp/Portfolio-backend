@@ -5,8 +5,14 @@ const { Pool } = require('pg');
 jest.mock('mongoose', () => ({
   connect: jest.fn(),
   disconnect: jest.fn(),
+  createConnection: jest.fn(() => ({
+    on: jest.fn(),
+    once: jest.fn(),
+    close: jest.fn().mockResolvedValue()
+  })),
   connection: {
-    db: {}
+    db: {},
+    useDb: jest.fn(() => ({ db: {} }))
   },
   mongo: {
     GridFSBucket: jest.fn()
@@ -260,7 +266,7 @@ describe('DatabaseManager', () => {
       expect(mockEnd).toHaveBeenCalled();
     });
 
-    test('should handle case when postgresql not connected', async () => {
+    test('should handle case when postgresql connection not connected', async () => {
       mongoose.disconnect.mockResolvedValue();
 
       await dbManager.closeAll();

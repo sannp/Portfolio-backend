@@ -3,7 +3,7 @@
  * Tests embedding dimension normalization (padding/truncating) and storage
  */
 
-const embeddingService = require('../../src/api/projects/portfolio/services/embeddingService');
+const embeddingService = require('../../src/api/projects/personal/services/embeddingService');
 const aiService = require('../../src/services/aiService');
 const dbManager = require('../../src/database/dbConfig');
 

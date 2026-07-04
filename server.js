@@ -38,9 +38,9 @@ const startServer = async () => {
     const SocketHandler = require('./src/api/research/socketHandler');
     new SocketHandler(io);
 
-    // Setup portfolio chat socket handlers
-    const PortfolioSocketHandler = require('./src/api/projects/portfolio/socketHandler');
-    new PortfolioSocketHandler(io);
+    // Setup personal chat socket handlers
+    const PersonalSocketHandler = require('./src/api/projects/personal/socketHandler');
+    new PersonalSocketHandler(io);
 
     // Start the server
     server.listen(PORT, () => {
