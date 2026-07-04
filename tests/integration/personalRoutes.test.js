@@ -78,18 +78,7 @@ describe('Personal Routes Integration Tests', () => {
   });
 
   describe('Watchlist Endpoints', () => {
-    test('GET /api/personal/watchlist - should retrieve watchlist items', async () => {
-      Watchlist.find.mockResolvedValue([{ _id: '1', title: 'Movie 1', imdbUrl: 'url1', type: 'movie' }]);
-
-      const response = await request(app).get('/api/personal/watchlist');
-
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-      expect(response.body.message).toBe('Watchlist retrieved successfully');
-      expect(response.body.data).toHaveLength(1);
-    });
-
-    test('QUERY /api/personal/watchlist - should query watchlist items with request body', async () => {
+    test('GET /api/personal/watchlist - should retrieve watchlist items with pagination, filter, and sorting via query params', async () => {
       const mockWatchlist = [{ _id: '1', title: 'Movie 1', imdbUrl: 'url1', type: 'movie', isWatched: true, imdbRating: '8.8' }];
       Watchlist.countDocuments.mockResolvedValue(1);
       const mockQuery = {
@@ -99,13 +88,11 @@ describe('Personal Routes Integration Tests', () => {
       };
       Watchlist.find.mockReturnValue(mockQuery);
 
-      const response = await request(app)
-        .query('/api/personal/watchlist')
-        .send({ isWatched: true, page: 1, limit: 10, sortBy: 'rating', sortOrder: 'desc' });
+      const response = await request(app).get('/api/personal/watchlist?isWatched=true&page=1&limit=10&sortBy=rating&sortOrder=desc');
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.message).toBe('Watchlist queried successfully');
+      expect(response.body.message).toBe('Watchlist retrieved successfully');
       expect(response.body.data.items).toHaveLength(1);
       expect(response.body.data.pagination).toBeDefined();
       expect(Watchlist.find).toHaveBeenCalledWith({ isWatched: true });
@@ -140,25 +127,6 @@ describe('Personal Routes Integration Tests', () => {
       Watchlist.find.mockReturnValue(mockQuery);
 
       const response = await request(app).get('/api/personal/watchlist/type/movie?isWatched=true');
-
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.items).toHaveLength(1);
-      expect(Watchlist.find).toHaveBeenCalledWith({ type: 'movie', isWatched: true });
-    });
-
-    test('QUERY /api/personal/watchlist/type/:type - should query watchlist items of specific type with request body', async () => {
-      const mockWatchlist = [{ _id: '1', title: 'Movie 1', imdbUrl: 'url1', type: 'movie', isWatched: true }];
-      Watchlist.countDocuments.mockResolvedValue(1);
-      const mockQuery = {
-        skip: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockResolvedValue(mockWatchlist)
-      };
-      Watchlist.find.mockReturnValue(mockQuery);
-
-      const response = await request(app)
-        .query('/api/personal/watchlist/type/movie')
-        .send({ isWatched: true });
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
