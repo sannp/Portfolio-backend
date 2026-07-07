@@ -9,6 +9,9 @@ const ExpensesSchema = mongoose.Schema({
     type: String,
     required: true,
   },
+  category: {
+    type: String,
+  },
   amount: {
     type: Number,
     required: true,
@@ -20,22 +23,18 @@ const ExpensesSchema = mongoose.Schema({
   account: {
     type: String,
   },
-  isExpense: {
+  isAccounted: {
     type: Boolean,
     default: true,
-  },
-  isIncome: {
-    type: Boolean,
-    default: false,
-  },
-  category: {
-    type: String,
   },
   tags: {
     type: [String],
     default: [],
   },
   note: {
+    type: String,
+  },
+  information: {
     type: String,
   },
   createdDate: {

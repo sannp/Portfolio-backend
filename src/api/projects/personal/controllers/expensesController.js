@@ -3,19 +3,36 @@ const router = express.Router();
 const Expenses = require('#models/Expenses');
 
 // @route GET /
-// @desc Get all expenses with optional pagination
+// @desc Get all expenses with optional pagination and date filtering
 router.get('/', async (req, res) => {
   try {
-    const { page, limit } = req.query;
+    const { page, limit, startDate, endDate } = req.query;
+    const query = {};
+
+    if (startDate || endDate) {
+      query.date = {};
+      if (startDate) {
+        query.date.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        query.date.$lte = new Date(endDate);
+      }
+    }
+
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 10;
     const skip = (pageNum - 1) * limitNum;
 
-    const total = await Expenses.countDocuments();
-    const expenses = await Expenses.find()
-      .sort({ date: -1 })
-      .skip(skip)
-      .limit(limitNum);
+    const isPagingEnabled = limit !== '-1' && limit !== 'all';
+
+    let dbQuery = Expenses.find(query).sort({ date: -1 });
+    const total = await Expenses.countDocuments(query);
+
+    if (isPagingEnabled) {
+      dbQuery = dbQuery.skip(skip).limit(limitNum);
+    }
+
+    const expenses = await dbQuery;
 
     res.json({
       success: true,
@@ -24,9 +41,9 @@ router.get('/', async (req, res) => {
         items: expenses,
         pagination: {
           total,
-          page: pageNum,
-          limit: limitNum,
-          totalPages: Math.ceil(total / limitNum),
+          page: isPagingEnabled ? pageNum : 1,
+          limit: isPagingEnabled ? limitNum : total,
+          totalPages: isPagingEnabled ? Math.ceil(total / limitNum) : 1,
         },
       },
     });
@@ -45,8 +62,8 @@ router.post('/', async (req, res) => {
       amount: req.body.amount,
       type: req.body.type,
       account: req.body.account,
-      isExpense: req.body.isExpense,
-      isIncome: req.body.isIncome,
+      isAccounted: req.body.isAccounted,
+      information: req.body.information,
       category: req.body.category,
       tags: req.body.tags,
       note: req.body.note,

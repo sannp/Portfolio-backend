@@ -48,6 +48,30 @@ describe('Expenses Controller Unit Tests', () => {
       expect(mockQuery.limit).toHaveBeenCalledWith(10);
     });
 
+    test('should retrieve expenses filtered by startDate and endDate successfully', async () => {
+      const mockExpenses = [
+        { _id: '1', date: '2026-07-07T12:00:00.000Z', place: 'Shop', amount: 100, type: 'DR' }
+      ];
+      Expenses.countDocuments.mockResolvedValue(1);
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockExpenses)
+      };
+      Expenses.find.mockReturnValue(mockQuery);
+
+      const response = await request(app).get('/?startDate=2026-07-01&endDate=2026-07-10&page=1&limit=10');
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(Expenses.find).toHaveBeenCalledWith({
+        date: {
+          $gte: new Date('2026-07-01'),
+          $lte: new Date('2026-07-10')
+        }
+      });
+    });
+
     test('should handle errors when retrieving expenses', async () => {
       Expenses.countDocuments.mockRejectedValue(new Error('Database error'));
 
@@ -67,8 +91,8 @@ describe('Expenses Controller Unit Tests', () => {
       amount: 1500,
       type: 'DR',
       account: 'Cash',
-      isExpense: true,
-      isIncome: false,
+      isAccounted: true,
+      information: 'Some info',
       category: 'Food',
       tags: ['groceries'],
       note: 'Weekly groceries'

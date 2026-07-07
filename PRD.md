@@ -187,8 +187,8 @@ All endpoints return a consistent JSON structure:
 | GET | /chat/history/:sessionId | Get session chat history | - |
 | DELETE | /chat/history/:sessionId | Clear session chat history | - |
 | GET | /chat/health | Check recruiter chatbot health | - |
-| GET | /expenses | List all expenses with optional pagination | page, limit (query params) |
-| POST | /expenses | Create a new expense | date, place, amount, type, account, isExpense, isIncome, category, tags, note |
+| GET | /expenses | List all expenses with optional pagination and date-filtering | page, limit, startDate, endDate (query params) |
+| POST | /expenses | Create a new expense | date, place, amount, type, account, isAccounted, information, category, tags, note |
 | PUT | /expenses/:id | Update an expense | Same as create (partial fields allowed) |
 | DELETE | /expenses/:id | Delete an expense by ID | - |
 
@@ -238,8 +238,8 @@ All endpoints return a consistent JSON structure:
   amount: Number (required),
   type: String (enum: ["DR", "CR"]),
   account: String,
-  isExpense: Boolean (default: true),
-  isIncome: Boolean (default: false),
+  isAccounted: Boolean (default: true),
+  information: String,
   category: String,
   tags: Array (default: []),
   note: String,
