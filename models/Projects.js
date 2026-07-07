@@ -26,16 +26,10 @@ const ProjectsSchema = mongoose.Schema({
 		type: Array,
 		default: [],
 	},
-	button1: {
+	codeLink: {
 		type: String,
 	},
-	button1Url: {
-		type: String,
-	},
-	button2: {
-		type: String,
-	},
-	button2Url: {
+	previewLink: {
 		type: String,
 	},
 	createdDate: {
