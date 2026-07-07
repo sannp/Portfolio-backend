@@ -157,13 +157,13 @@ describe('Personal Routes Integration Tests', () => {
   });
 
   describe('Projects Endpoints', () => {
-    test('POST /api/personal/projects/addnew - should create project', async () => {
-      Project.find.mockResolvedValue([]);
+    test('POST /api/personal/projects - should create project', async () => {
+      Project.findOne.mockResolvedValue(null);
       const mockSave = jest.fn().mockResolvedValue({ _id: '123', title: 'Test' });
       Project.mockImplementation(() => ({ save: mockSave }));
 
       const response = await request(app)
-        .post('/api/personal/projects/addnew')
+        .post('/api/personal/projects')
         .send({
           title: 'Test Project',
           imageUrl: 'http://example.com/img.jpg',
@@ -173,16 +173,21 @@ describe('Personal Routes Integration Tests', () => {
         });
 
       expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
     });
 
-    test('GET /api/personal/projects/all - should return all projects', async () => {
-      Project.find.mockReturnValue({
-        sort: jest.fn().mockReturnValue({
+    test('GET /api/personal/projects - should return all projects', async () => {
+      Project.countDocuments.mockResolvedValue(1);
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnValue({
           select: jest.fn().mockResolvedValue([{ _id: '1', title: 'Project 1' }])
         })
-      });
+      };
+      Project.find.mockReturnValue(mockQuery);
 
-      const response = await request(app).get('/api/personal/projects/all');
+      const response = await request(app).get('/api/personal/projects');
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);

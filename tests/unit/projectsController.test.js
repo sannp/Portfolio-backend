@@ -2,12 +2,12 @@ const request = require('supertest');
 const express = require('express');
 
 // Mock the Project model
-jest.mock('../../models/Projects');
+jest.mock('#models/Projects');
 
-const Project = require('../../models/Projects');
+const Project = require('#models/Projects');
 const projectsController = require('../../src/api/projects/personal/controllers/projectsController');
 
-describe('Projects Controller', () => {
+describe('Projects Controller Unit Tests', () => {
   let app;
 
   beforeEach(() => {
@@ -17,7 +17,125 @@ describe('Projects Controller', () => {
     jest.clearAllMocks();
   });
 
-  describe('POST /addnew', () => {
+  describe('GET /', () => {
+    test('should retrieve projects with pagination, type filter, and sorting successfully via query params', async () => {
+      const mockProjects = [
+        { _id: '1', title: 'Test Project', description: 'desc', type: 'project', imageUrl: 'img.jpg', imageAlt: 'alt' }
+      ];
+      Project.countDocuments.mockResolvedValue(1);
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnValue({
+          select: jest.fn().mockResolvedValue(mockProjects)
+        })
+      };
+      Project.find.mockReturnValue(mockQuery);
+
+      const response = await request(app).get('/?type=project&page=1&limit=10&sortBy=title&sortOrder=asc');
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBe('Projects retrieved successfully');
+      expect(response.body.data.items).toEqual(mockProjects);
+      expect(response.body.data.pagination).toEqual({
+        total: 1,
+        page: 1,
+        limit: 10,
+        totalPages: 1
+      });
+      expect(Project.find).toHaveBeenCalledWith({ type: 'project' });
+      expect(mockQuery.sort).toHaveBeenCalledWith({ title: 1 });
+      expect(mockQuery.skip).toHaveBeenCalledWith(0);
+    });
+
+    test('should retrieve projects with search query successfully', async () => {
+      const mockProjects = [
+        { _id: '1', title: 'Test Project', description: 'desc', type: 'project', imageUrl: 'img.jpg', imageAlt: 'alt' }
+      ];
+      Project.countDocuments.mockResolvedValue(1);
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnValue({
+          select: jest.fn().mockResolvedValue(mockProjects)
+        })
+      };
+      Project.find.mockReturnValue(mockQuery);
+
+      const response = await request(app).get('/?search=Test');
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(Project.find).toHaveBeenCalledWith({
+        $or: [
+          { title: { $regex: 'Test', $options: 'i' } },
+          { description: { $regex: 'Test', $options: 'i' } },
+          { badges: { $regex: 'Test', $options: 'i' } }
+        ]
+      });
+    });
+
+    test('should handle database error when fetching projects', async () => {
+      Project.countDocuments.mockRejectedValue(new Error('Database error'));
+
+      const response = await request(app).get('/');
+
+      expect(response.status).toBe(500);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Database error');
+      expect(response.body.data).toBeNull();
+    });
+  });
+
+  describe('GET /type/:type', () => {
+    test('should retrieve projects filtered by type and paginated successfully', async () => {
+      const mockProjects = [
+        { _id: '1', title: 'Test Project', description: 'desc', type: 'project', imageUrl: 'img.jpg', imageAlt: 'alt' }
+      ];
+      Project.countDocuments.mockResolvedValue(1);
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnValue({
+          select: jest.fn().mockResolvedValue(mockProjects)
+        })
+      };
+      Project.find.mockReturnValue(mockQuery);
+
+      const response = await request(app).get('/type/project?page=1&limit=10');
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.items).toEqual(mockProjects);
+      expect(response.body.data.pagination).toEqual({
+        total: 1,
+        page: 1,
+        limit: 10,
+        totalPages: 1
+      });
+      expect(Project.find).toHaveBeenCalledWith({ type: 'project' });
+    });
+
+    test('should return 400 when type is invalid', async () => {
+      const response = await request(app).get('/type/invalid');
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('Invalid type');
+    });
+
+    test('should handle database errors when retrieving filtered items', async () => {
+      Project.countDocuments.mockRejectedValue(new Error('Database error'));
+
+      const response = await request(app).get('/type/project');
+
+      expect(response.status).toBe(500);
+      expect(response.body.success).toBe(false);
+    });
+  });
+
+  describe('POST /', () => {
     const validProject = {
       title: 'Test Project',
       imageUrl: 'http://example.com/image.jpg',
@@ -39,7 +157,7 @@ describe('Projects Controller', () => {
       }));
 
       const response = await request(app)
-        .post('/addnew')
+        .post('/')
         .send(validProject);
 
       expect(response.status).toBe(200);
@@ -52,7 +170,7 @@ describe('Projects Controller', () => {
       Project.findOne.mockResolvedValue({ title: 'Test Project' });
 
       const response = await request(app)
-        .post('/addnew')
+        .post('/')
         .send(validProject);
 
       expect(response.status).toBe(200);
@@ -62,12 +180,21 @@ describe('Projects Controller', () => {
 
     test('should return error when required fields are missing', async () => {
       const response = await request(app)
-        .post('/addnew')
+        .post('/')
         .send({ title: 'Test Project' });
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(false);
       expect(response.body.message).toContain('required');
+    });
+
+    test('should return error when type is invalid', async () => {
+      const response = await request(app)
+        .post('/')
+        .send({ ...validProject, type: 'invalid' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
     });
 
     test('should handle database save error', async () => {
@@ -78,134 +205,62 @@ describe('Projects Controller', () => {
       }));
 
       const response = await request(app)
-        .post('/addnew')
+        .post('/')
         .send(validProject);
 
       expect(response.status).toBe(500);
       expect(response.body.success).toBe(false);
     });
-
-    test('should return error when type is invalid', async () => {
-      Project.findOne.mockResolvedValue(null);
-      const response = await request(app)
-        .post('/addnew')
-        .send({ ...validProject, type: 'invalid' });
-
-      expect(response.status).toBe(400);
-      expect(response.body.success).toBe(false);
-    });
   });
 
-  describe('GET /all', () => {
-    test('should return all projects', async () => {
-      const mockProjects = [
-        { _id: '1', title: 'Project 1' },
-        { _id: '2', title: 'Project 2' }
-      ];
-
-      Project.find.mockReturnValue({
-        sort: jest.fn().mockReturnValue({
-          select: jest.fn().mockResolvedValue(mockProjects)
-        })
-      });
-
-      const response = await request(app).get('/all');
-
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveLength(2);
-      expect(Project.find).toHaveBeenCalled();
-    });
-
-    test('should handle database error when fetching all projects', async () => {
-      Project.find.mockReturnValue({
-        sort: jest.fn().mockReturnValue({
-          select: jest.fn().mockRejectedValue(new Error('Database error'))
-        })
-      });
-
-      const response = await request(app).get('/all');
-
-      expect(response.status).toBe(500);
-      expect(response.body.success).toBe(false);
-    });
-
-    test('should return empty array when no projects exist', async () => {
-      Project.find.mockReturnValue({
-        sort: jest.fn().mockReturnValue({
-          select: jest.fn().mockResolvedValue([])
-        })
-      });
-
-      const response = await request(app).get('/all');
-
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-      expect(response.body.data).toEqual([]);
-    });
-  });
-
-  describe('GET /:projectId', () => {
-    test('should return specific project by ID', async () => {
-      const mockProject = { _id: '123', title: 'Test Project' };
-      Project.findById.mockReturnValue({
-        select: jest.fn().mockResolvedValue(mockProject)
-      });
-
-      const response = await request(app).get('/123');
-
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.title).toBe('Test Project');
-      expect(Project.findById).toHaveBeenCalledWith('123');
-    });
-
-    test('should handle database error when fetching project', async () => {
-      Project.findById.mockReturnValue({
-        select: jest.fn().mockRejectedValue(new Error('Database error'))
-      });
-
-      const response = await request(app).get('/123');
-
-      expect(response.status).toBe(500);
-      expect(response.body.success).toBe(false);
-    });
-
-    test('should return 404 when project not found', async () => {
-      Project.findById.mockReturnValue({
-        select: jest.fn().mockResolvedValue(null)
-      });
-
-      const response = await request(app).get('/999');
-
-      expect(response.status).toBe(404);
-      expect(response.body.success).toBe(false);
-    });
-  });
-
-  describe('PATCH /:projectId', () => {
+  describe('PUT /:projectId', () => {
     const updateData = {
       title: 'Updated Project',
       imageUrl: 'http://example.com/updated.jpg',
       imageAlt: 'Updated Image',
-      description: 'Updated description'
+      description: 'Updated description',
+      type: 'project',
+      badges: ['new-badge']
     };
 
     test('should update project successfully', async () => {
-      Project.updateOne.mockResolvedValue({ modifiedCount: 1 });
+      const mockUpdated = { _id: '123', ...updateData };
+      const mockSelect = jest.fn().mockResolvedValue(mockUpdated);
+      Project.findByIdAndUpdate.mockReturnValue({
+        select: mockSelect
+      });
 
       const response = await request(app)
-        .patch('/123')
+        .put('/123')
         .send(updateData);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.message).toBe('Project updated successfully');
+      expect(response.body.data).toEqual(mockUpdated);
+      expect(Project.findByIdAndUpdate).toHaveBeenCalledWith(
+        '123',
+        {
+          $set: {
+            title: updateData.title,
+            description: updateData.description,
+            imageUrl: updateData.imageUrl,
+            imageAlt: updateData.imageAlt,
+            badges: updateData.badges,
+            button1: undefined,
+            button1Url: undefined,
+            button2: undefined,
+            button2Url: undefined,
+            type: 'project'
+          }
+        },
+        { new: true }
+      );
     });
 
-    test('should return error when required fields are missing for update', async () => {
+    test('should return 400 when required fields are missing for update', async () => {
       const response = await request(app)
-        .patch('/123')
+        .put('/123')
         .send({ title: 'Updated Project' });
 
       expect(response.status).toBe(400);
@@ -213,11 +268,28 @@ describe('Projects Controller', () => {
       expect(response.body.message).toContain('required');
     });
 
-    test('should handle database error during update', async () => {
-      Project.updateOne.mockRejectedValue(new Error('Update failed'));
+    test('should return 404 when project not found during update', async () => {
+      const mockSelect = jest.fn().mockResolvedValue(null);
+      Project.findByIdAndUpdate.mockReturnValue({
+        select: mockSelect
+      });
 
       const response = await request(app)
-        .patch('/123')
+        .put('/123')
+        .send(updateData);
+
+      expect(response.status).toBe(404);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Project not found');
+    });
+
+    test('should handle database error during update', async () => {
+      Project.findByIdAndUpdate.mockReturnValue({
+        select: jest.fn().mockRejectedValue(new Error('Update failed'))
+      });
+
+      const response = await request(app)
+        .put('/123')
         .send(updateData);
 
       expect(response.status).toBe(500);
@@ -227,18 +299,38 @@ describe('Projects Controller', () => {
 
   describe('DELETE /:projectId', () => {
     test('should delete project successfully', async () => {
-      Project.deleteOne.mockResolvedValue({ deletedCount: 1 });
+      const mockDeleted = { _id: '123', title: 'Test Project' };
+      const mockSelect = jest.fn().mockResolvedValue(mockDeleted);
+      Project.findByIdAndDelete.mockReturnValue({
+        select: mockSelect
+      });
 
       const response = await request(app).delete('/123');
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.message).toBe('Project deleted successfully');
-      expect(Project.deleteOne).toHaveBeenCalledWith({ _id: '123' });
+      expect(response.body.data).toEqual(mockDeleted);
+      expect(Project.findByIdAndDelete).toHaveBeenCalledWith('123');
+    });
+
+    test('should return 404 when project not found during delete', async () => {
+      const mockSelect = jest.fn().mockResolvedValue(null);
+      Project.findByIdAndDelete.mockReturnValue({
+        select: mockSelect
+      });
+
+      const response = await request(app).delete('/123');
+
+      expect(response.status).toBe(404);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Project not found');
     });
 
     test('should handle database error during delete', async () => {
-      Project.deleteOne.mockRejectedValue(new Error('Delete failed'));
+      Project.findByIdAndDelete.mockReturnValue({
+        select: jest.fn().mockRejectedValue(new Error('Delete failed'))
+      });
 
       const response = await request(app).delete('/123');
 
