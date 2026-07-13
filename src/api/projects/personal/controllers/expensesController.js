@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const Expenses = require('#models/Expenses');
 
 // @route GET /
@@ -57,6 +58,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const newExpense = new Expenses({
+      _id: req.body._id || req.body.id || new mongoose.Types.ObjectId().toString(),
       date: req.body.date,
       place: req.body.place,
       amount: req.body.amount,

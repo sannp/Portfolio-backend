@@ -242,8 +242,7 @@ All endpoints return a consistent JSON structure:
   information: String,
   category: String,
   tags: Array (default: []),
-  note: String,
-  createdDate: Date (default: Date.now)
+  note: String
 }
 ```
 

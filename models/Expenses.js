@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
 const ExpensesSchema = mongoose.Schema({
+  _id: {
+    type: String,
+    required: true,
+  },
   date: {
     type: Date,
     required: true,
@@ -36,11 +40,9 @@ const ExpensesSchema = mongoose.Schema({
   },
   information: {
     type: String,
-  },
-  createdDate: {
-    type: Date,
-    default: Date.now,
   }
+}, {
+  timestamps: true
 });
 
 module.exports = mongoose.model('Expenses', ExpensesSchema);
