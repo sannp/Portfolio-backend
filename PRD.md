@@ -187,6 +187,10 @@ All endpoints return a consistent JSON structure:
 | GET | /chat/history/:sessionId | Get session chat history | - |
 | DELETE | /chat/history/:sessionId | Clear session chat history | - |
 | GET | /chat/health | Check recruiter chatbot health | - |
+| GET | /expenses | List all expenses with optional pagination and date-filtering | page, limit, startDate, endDate (query params) |
+| POST | /expenses | Create a new expense | date, place, amount, type, account, isAccounted, information, category, tags, note |
+| PUT | /expenses/:id | Update an expense | Same as create (partial fields allowed) |
+| DELETE | /expenses/:id | Delete an expense by ID | - |
 
 ---
 
@@ -201,10 +205,8 @@ All endpoints return a consistent JSON structure:
   imageUrl: String (required),
   imageAlt: String (default: "placeholder"),
   badges: Array (default: []),
-  button1: String (optional),
-  button1Url: String (optional),
-  button2: String (optional),
-  button2Url: String (optional),
+  codeLink: String (optional),
+  previewLink: String (optional),
   createdDate: Date (default: Date.now)
 }
 ```
@@ -227,6 +229,22 @@ All endpoints return a consistent JSON structure:
 - Bucket name: `uploads`
 - Supported formats: JPEG, JPG, PNG, GIF
 - Maximum file size: 20MB
+
+### 7.7 Expenses Schema
+```javascript
+{
+  date: Date (required),
+  place: String (required),
+  amount: Number (required),
+  type: String (enum: ["DR", "CR"]),
+  account: String,
+  isAccounted: Boolean (default: true),
+  information: String,
+  category: String,
+  tags: Array (default: []),
+  note: String
+}
+```
 
 ---
 
@@ -308,7 +326,8 @@ base-server-template/
 │   │   │       │   ├── watchlistController.js
 │   │   │       │   ├── projectsController.js
 │   │   │       │   ├── blogpostsController.js
-│   │   │       │   └── filesController.js
+│   │   │       │   ├── filesController.js
+│   │   │       │   └── expensesController.js
 │   │   │       └── services/
 │   │   │           ├── chunkingService.js
 │   │   │           ├── contextBuilder.js
@@ -323,7 +342,8 @@ base-server-template/
 ├── models/                    # Mongoose models
 │   ├── Projects.js           # Project schema
 │   ├── Watchlist.js          # Watchlist schema
-│   └── BlogPosts.js          # Blog post schema
+│   ├── BlogPosts.js          # Blog post schema
+│   └── Expenses.js           # Expense schema
 ├── routes/                    # Legacy routes (being migrated)
 ├── server.js                 # New server entry point
 ├── package.json              # Dependencies and scripts

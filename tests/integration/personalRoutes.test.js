@@ -5,6 +5,7 @@ const express = require('express');
 jest.mock('#models/Watchlist');
 jest.mock('#models/Projects');
 jest.mock('#models/BlogPosts');
+jest.mock('#models/Expenses');
 
 // Mock database manager
 jest.mock('../../src/database/dbConfig', () => ({
@@ -49,6 +50,7 @@ jest.mock('config', () => ({
 
 const Watchlist = require('#models/Watchlist');
 const Project = require('#models/Projects');
+const Expenses = require('#models/Expenses');
 const personalRoutes = require('../../src/api/projects/personal/routes');
 
 describe('Personal Routes Integration Tests', () => {
@@ -73,6 +75,7 @@ describe('Personal Routes Integration Tests', () => {
       expect(response.body.data.endpoints).toContain('/projects');
       expect(response.body.data.endpoints).toContain('/blogposts');
       expect(response.body.data.endpoints).toContain('/files');
+      expect(response.body.data.endpoints).toContain('/expenses');
       expect(response.body.data.endpoints).toContain('/chat');
     });
   });
@@ -205,6 +208,46 @@ describe('Personal Routes Integration Tests', () => {
     test('should have files routes available', async () => {
       const response = await request(app).get('/api/personal/files/all');
       expect(response.status).not.toBe(404);
+    });
+  });
+
+  describe('Expenses Endpoints', () => {
+    test('GET /api/personal/expenses - should retrieve expenses with pagination', async () => {
+      const mockExpenses = [{ _id: '1', date: new Date().toISOString(), place: 'Grocery Store', amount: 1500 }];
+      Expenses.countDocuments.mockResolvedValue(1);
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockExpenses)
+      };
+      Expenses.find.mockReturnValue(mockQuery);
+
+      const response = await request(app).get('/api/personal/expenses?page=1&limit=10');
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBe('Expenses retrieved successfully');
+      expect(response.body.data.items).toHaveLength(1);
+      expect(Expenses.find).toHaveBeenCalled();
+    });
+
+    test('POST /api/personal/expenses - should create expense', async () => {
+      const mockSavedExpense = { _id: '123', place: 'Supermarket', amount: 2000 };
+      const mockSave = jest.fn().mockResolvedValue(mockSavedExpense);
+      Expenses.mockImplementation(() => ({ save: mockSave }));
+
+      const response = await request(app)
+        .post('/api/personal/expenses')
+        .send({
+          date: '2026-07-07T00:00:00.000Z',
+          place: 'Supermarket',
+          amount: 2000
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBe('Expense added successfully');
+      expect(response.body.data).toEqual(mockSavedExpense);
     });
   });
 

@@ -143,10 +143,8 @@ describe('Projects Controller Unit Tests', () => {
       description: 'Test description',
       type: 'project',
       badges: ['badge1', 'badge2'],
-      button1: 'View',
-      button1Url: 'http://example.com',
-      button2: 'GitHub',
-      button2Url: 'http://github.com'
+      codeLink: 'http://github.com',
+      previewLink: 'http://example.com'
     };
 
     test('should create new project successfully', async () => {
@@ -247,10 +245,8 @@ describe('Projects Controller Unit Tests', () => {
             imageUrl: updateData.imageUrl,
             imageAlt: updateData.imageAlt,
             badges: updateData.badges,
-            button1: undefined,
-            button1Url: undefined,
-            button2: undefined,
-            button2Url: undefined,
+            codeLink: undefined,
+            previewLink: undefined,
             type: 'project'
           }
         },

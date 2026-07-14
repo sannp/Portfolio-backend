@@ -6,6 +6,7 @@ const watchlistController = require('./controllers/watchlistController');
 const projectsController = require('./controllers/projectsController');
 const blogpostsController = require('./controllers/blogpostsController');
 const filesController = require('./controllers/filesController');
+const expensesController = require('./controllers/expensesController');
 const { router: chatController } = require('./controllers/chatController');
 
 // Watchlist routes
@@ -13,6 +14,7 @@ router.use('/watchlist', watchlistController);
 router.use('/projects', projectsController);
 router.use('/blogposts', blogpostsController);
 router.use('/files', filesController);
+router.use('/expenses', expensesController);
 router.use('/chat', chatController);
 
 // Project info endpoint
@@ -28,6 +30,7 @@ router.get('/', (req, res) => {
         '/projects',
         '/blogposts',
         '/files',
+        '/expenses',
         '/chat'
       ]
     }
