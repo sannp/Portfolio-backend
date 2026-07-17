@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { authenticateApiSecret } = require('../../middleware/auth');
+const { requestLogger } = require('../../middleware/logger');
 const researchController = require('./controllers/researchController');
+
+// Apply request logging to all research endpoints
+router.use(requestLogger);
 
 // REST endpoints for research (Socket.io handles the streaming)
 // These endpoints provide status and management
