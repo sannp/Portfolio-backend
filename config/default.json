@@ -99,6 +99,11 @@
         "files",
         "chat"
       ],
+      "whatsapp": {
+        "enabled": true,
+        "defaultTemplate": "hello_world",
+        "apiVersion": "v20.0"
+      },
       "chat": {
         "enabled": true,
         "aiProvider": "gemini",

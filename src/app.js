@@ -49,6 +49,15 @@ app.get('/health', async (req, res) => {
     n8nStatus = { status: 'disconnected', url: process.env.N8N_SERVER_URL || 'https://n8n-server-wewk.onrender.com', error: error.message };
   }
 
+  if (dbManager.connections.postgresql) {
+    try {
+      await dbManager.connections.postgresql.query('SELECT 1');
+      dbStatus.postgresql = 'connected';
+    } catch (error) {
+      dbStatus.postgresql = 'disconnected';
+    }
+  }
+
   res.json({
     success: true,
     message: 'Server is running',
