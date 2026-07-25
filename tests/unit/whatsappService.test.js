@@ -11,8 +11,6 @@ describe('WhatsAppService Unit Tests', () => {
       WHATSAPP_ACCESS_TOKEN: 'mock_token_123',
       WHATSAPP_PHONE_NUMBER_ID: 'mock_phone_id_456',
       WHATSAPP_RECIPIENT_PHONE: '15550001111',
-      WHATSAPP_API_VERSION: 'v18.0',
-      WHATSAPP_DEFAULT_TEMPLATE: 'server_alert'
     };
 
     global.fetch = jest.fn();
@@ -33,7 +31,7 @@ describe('WhatsAppService Unit Tests', () => {
       const result = await whatsappService.sendTextMessage('15550001111', 'Hello World Test Alert');
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://graph.facebook.com/v18.0/mock_phone_id_456/messages',
+        'https://graph.facebook.com/v20.0/mock_phone_id_456/messages',
         {
           method: 'POST',
           headers: {
@@ -74,7 +72,7 @@ describe('WhatsAppService Unit Tests', () => {
       const result = await whatsappService.sendTemplateMessage('15550001111');
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://graph.facebook.com/v18.0/mock_phone_id_456/messages',
+        'https://graph.facebook.com/v20.0/mock_phone_id_456/messages',
         {
           method: 'POST',
           headers: {
@@ -87,7 +85,7 @@ describe('WhatsAppService Unit Tests', () => {
             type: 'template',
             template: {
               name: 'server_alert',
-              language: { code: 'en_US' },
+              language: { code: 'en' },
               components: []
             }
           })
@@ -99,22 +97,24 @@ describe('WhatsAppService Unit Tests', () => {
   });
 
   describe('sendAlert', () => {
-    it('should send template alert with environment parameters', async () => {
+    it('should send template alert with single parameter for server_alert', async () => {
       global.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ messaging_product: 'whatsapp', messages: [{ id: 'wamid.alert123' }] })
       });
 
-      const result = await whatsappService.sendAlert('High CPU usage detected', 'Production');
+      const result = await whatsappService.sendAlert('High CPU usage detected');
 
       expect(result.success).toBe(true);
       expect(result.messageId).toBe('wamid.alert123');
-      expect(global.fetch).toHaveBeenCalledWith(
-        'https://graph.facebook.com/v18.0/mock_phone_id_456/messages',
-        expect.objectContaining({
-          method: 'POST'
-        })
-      );
+
+      // Verify fetch was called with the correct URL and a single body parameter
+      const fetchCall = global.fetch.mock.calls[0];
+      expect(fetchCall[0]).toBe('https://graph.facebook.com/v20.0/mock_phone_id_456/messages');
+      const sentBody = JSON.parse(fetchCall[1].body);
+      expect(sentBody.template.name).toBe('server_alert');
+      expect(sentBody.template.components[0].parameters).toHaveLength(1);
+      expect(sentBody.template.components[0].parameters[0].text).toContain('High CPU usage detected');
     });
   });
 });

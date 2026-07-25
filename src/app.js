@@ -261,7 +261,23 @@ app.use('*', (req, res) => {
 // Error handler
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-  res.status(err.status || 500).json({
+
+  const statusCode = err.status || 500;
+
+  // Send WhatsApp alert for server errors (5xx)
+  if (statusCode >= 500) {
+    try {
+      const whatsappService = require('./services/whatsappService');
+      const alertMsg = `${err.message || 'Internal server error'} | ${req.method} ${req.originalUrl}`;
+      whatsappService.sendAlert(alertMsg).catch(alertErr => {
+        console.error('[ErrorHandler] WhatsApp alert failed:', alertErr.message);
+      });
+    } catch (alertErr) {
+      console.error('[ErrorHandler] WhatsApp service unavailable:', alertErr.message);
+    }
+  }
+
+  res.status(statusCode).json({
     success: false,
     message: err.message || 'Internal server error',
     data: process.env.NODE_ENV === 'development' ? err.stack : null

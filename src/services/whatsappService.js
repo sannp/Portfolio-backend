@@ -2,8 +2,8 @@ const config = require('config');
 
 class WhatsAppService {
   constructor() {
-    this.apiVersion = process.env.WHATSAPP_API_VERSION || 'v20.0';
-    this.defaultTemplate = process.env.WHATSAPP_DEFAULT_TEMPLATE || 'server_alert';
+    this.apiVersion = 'v20.0';
+    this.defaultTemplate = 'server_alert';
   }
 
   /**
@@ -61,7 +61,7 @@ class WhatsAppService {
       const { phoneNumberId, recipientPhone } = this._getCredentials();
       targetPhone = phoneNumber || recipientPhone;
       const tName = templateName || this.defaultTemplate;
-      const language = options.language || 'en_US';
+      const language = options.language || 'en';
 
       if (!targetPhone || !phoneNumberId) {
         throw new Error('WhatsApp configuration missing: Phone Number ID and Recipient Phone are required.');
@@ -176,28 +176,26 @@ class WhatsAppService {
   }
 
   /**
-   * Primary Alert Function to trigger server/error alerts
+   * Primary Alert Function to trigger server/error alerts.
+   * Uses the 'server_alert' template which has a single {{1}} variable.
    * 
    * @param {string} errorMessage - Error message or notification details
-   * @param {string} [environment='Production'] - Environment string (e.g. Production, Staging)
    * @param {Object} [options={}] - Options (phoneNumber, templateName)
    */
-  async sendAlert(errorMessage, environment = process.env.NODE_ENV || 'Production', options = {}) {
+  async sendAlert(errorMessage, options = {}) {
     const templateName = options.templateName || this.defaultTemplate;
     const phoneNumber = options.phoneNumber;
+    const env = process.env.NODE_ENV || 'production';
 
-    // Build parameters: [environment, errorMessage, timestamp]
-    const alertParams = [
-      environment,
-      String(errorMessage || '').slice(0, 1000),
-      new Date().toISOString()
-    ];
+    // server_alert template has 1 variable: {{1}} = the alert message
+    const alertText = `[${env}] ${String(errorMessage || 'Unknown error').slice(0, 900)} | ${new Date().toISOString()}`;
+    const alertParams = [alertText];
 
     const result = await this.sendTemplateMessage(phoneNumber, templateName, alertParams, options);
 
     if (!result.success) {
       console.warn('[WhatsAppService] Template alert failed, attempting fallback text alert...');
-      const fallbackText = `🚨 *[${environment}] ALERT*\n${errorMessage}\nTime: ${new Date().toISOString()}`;
+      const fallbackText = `🚨 *Server Alert [${env}]*\n${errorMessage}\nTime: ${new Date().toISOString()}`;
       return await this.sendTextMessage(phoneNumber, fallbackText);
     }
 

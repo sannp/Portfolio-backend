@@ -68,4 +68,23 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
+// Uncaught exception handler — alert and exit
+process.on('uncaughtException', async (error) => {
+  console.error('💥 Uncaught Exception:', error);
+  try {
+    const whatsappService = require('./src/services/whatsappService');
+    await whatsappService.sendAlert(`Uncaught Exception: ${error.message}`);
+  } catch (_) { /* best effort */ }
+  process.exit(1);
+});
+
+// Unhandled promise rejection handler — alert
+process.on('unhandledRejection', async (reason) => {
+  console.error('💥 Unhandled Rejection:', reason);
+  try {
+    const whatsappService = require('./src/services/whatsappService');
+    await whatsappService.sendAlert(`Unhandled Rejection: ${reason}`);
+  } catch (_) { /* best effort */ }
+});
+
 startServer();
