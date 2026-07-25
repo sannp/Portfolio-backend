@@ -4,6 +4,10 @@ const geminiService = require('./googleGemini');
 const groqService = require('./groqAPI');
 // const anthropicService = require('./anthropicService');
 
+if (!process.env.NODE_ENV) {
+  process.env.NODE_ENV = 'development'; // Fallback if NODE_ENV is not set
+}
+
 class AIService {
   constructor() {
     this.providers = {

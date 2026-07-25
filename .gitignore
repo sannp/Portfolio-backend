@@ -151,3 +151,8 @@ $RECYCLE.BIN/
 
 # Editors
 .windsurf/
+
+# Scripts
+scripts/
+
+.DS_Store
