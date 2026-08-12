@@ -25,7 +25,7 @@ jest.mock('pg', () => ({
 }));
 
 // Mock config
-jest.mock('config', () => {
+jest.mock('../../src/config', () => {
   const configObj = {
     'database.default': 'mongodb',
     'database.mongodb': {

@@ -1,6 +1,6 @@
 require('dotenv').config();
 const http = require('http');
-const config = require('config');
+const config = require('./src/config');
 const { Server } = require('socket.io');
 const { app, initializeApp } = require('./src/app');
 
@@ -15,19 +15,11 @@ const startServer = async () => {
     const server = http.createServer(app);
 
     // Setup Socket.io
-    const corsOptions = config.has('cors') ? { ...config.get('cors') } : {};
-    let corsOrigin = process.env.CORS_ORIGIN;
-    if (corsOrigin) {
-      if (corsOrigin.includes(',')) {
-        corsOrigin = corsOrigin.split(',').map(o => o.trim());
-      }
-    } else {
-      corsOrigin = corsOptions.origin || '*';
-    }
+    const corsOptions = config.getCorsOptions();
 
     const io = new Server(server, {
       cors: {
-        origin: corsOrigin,
+        origin: corsOptions.origin,
         methods: ['GET', 'POST'],
         credentials: corsOptions.credentials
       },

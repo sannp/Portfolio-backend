@@ -1,5 +1,6 @@
 const tavilyService = require('../services/tavilyService');
 const aiService = require('#services/aiService');
+const config = require('../../../config');
 
 class ResearchNodes {
   async researcherNode(state) {
@@ -53,7 +54,7 @@ Provide a detailed analysis.`;
     try {
       const result = await aiService.generateText(prompt, {
         provider: 'gemini',
-        model: process.env.ANALYST_MODEL || 'gemini-2.5-flash',
+        model: config.get('projects.research.analystModel') || 'gemini-2.5-flash',
         temperature: 0,
         maxTokens: 8192
       });
@@ -96,7 +97,7 @@ Write the final report in Markdown. Make it engaging, clear, and comprehensive.`
       // Use fast model since we just need formatting/synthesis
       const result = await aiService.generateText(prompt, {
         provider: 'gemini',
-        model: process.env.FAST_MODEL || 'gemini-2.5-flash',
+        model: config.get('projects.research.fastModel') || 'gemini-2.5-flash',
         temperature: 0.2,
         maxTokens: 8192
       });

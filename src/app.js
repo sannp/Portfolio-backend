@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const config = require('config');
+const config = require('./config');
 const mongoose = require('mongoose');
 const axios = require('axios');
 const dbManager = require('./database/dbConfig');
@@ -13,20 +13,7 @@ const researchRoutes = require('./api/research/routes');
 const app = express();
 
 // Setup CORS options dynamically
-const getCorsOptions = () => {
-  const options = config.has('cors') ? { ...config.get('cors') } : {};
-  let corsOrigin = process.env.CORS_ORIGIN;
-  if (corsOrigin) {
-    if (corsOrigin.includes(',')) {
-      options.origin = corsOrigin.split(',').map(o => o.trim());
-    } else {
-      options.origin = corsOrigin;
-    }
-  }
-  return options;
-};
-
-app.use(cors(getCorsOptions()));
+app.use(cors(config.getCorsOptions()));
 app.use(express.json());
 
 // Health check endpoint

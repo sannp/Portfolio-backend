@@ -2,7 +2,7 @@ const request = require('supertest');
 const express = require('express');
 
 // Mock config before requiring routes
-jest.mock('config', () => ({
+jest.mock('../../src/config', () => ({
   get: jest.fn((key) => {
     if (key === 'security.apiSecret') return 'test-api-secret';
     if (key === 'ai.defaultProvider') return 'gemini';
@@ -63,8 +63,9 @@ describe('AI Routes Integration', () => {
     });
 
     test('should return 500 when API secret not configured', async () => {
-      const originalGet = require('config').get;
-      require('config').get = jest.fn((key) => {
+      const config = require('../../src/config');
+      const originalGet = config.get;
+      config.get = jest.fn((key) => {
         if (key === 'security.apiSecret') return '';
         return originalGet(key);
       });
@@ -75,7 +76,7 @@ describe('AI Routes Integration', () => {
 
       expect(response.status).toBe(500);
 
-      require('config').get = originalGet;
+      config.get = originalGet;
     });
   });
 

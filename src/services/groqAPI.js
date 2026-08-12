@@ -1,5 +1,5 @@
 const Groq = require('groq-sdk');
-const config = require('config');
+const config = require('../config');
 
 class GroqService {
   constructor() {

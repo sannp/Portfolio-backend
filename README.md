@@ -18,10 +18,10 @@ A scalable Node.js/Express boilerplate server with multi-database support, AI in
 | Runtime | Node.js | 18.x+ |
 | Framework | Express.js | 4.21.2 |
 | Database | MongoDB | 6.0+ |
-| Database | PostgreSQL | 13+ |
+| Database | Aiven PostgreSQL | 13+ |
 | ODM | Mongoose | 8.14.0 |
 | AI Services | OpenAI, Gemini, Grok | Latest |
-| Configuration | config | 3.3.12 |
+| Configuration | env (dotenv + src/config.js) | n/a |
 | File Upload | Multer + GridFS | 1.4.5-lts.1 |
 
 ## 🛠️ Quick Start
@@ -55,10 +55,6 @@ npm start
 
 ```
 base-server-template/
-├── config/                    # Configuration files
-│   ├── default.json          # Default settings
-│   ├── development.json      # Development overrides
-│   └── production.json       # Production overrides
 ├── src/
 │   ├── api/
 │   │   └── v1/
@@ -66,6 +62,7 @@ base-server-template/
 │   │           └── portfolio/
 │   │               ├── routes.js
 │   │               └── controllers/
+│   ├── config.js             # Env-driven config (replaces node-config)
 │   ├── database/
 │   │   └── dbConfig.js       # Database manager
 │   ├── services/
@@ -85,47 +82,38 @@ base-server-template/
 
 ### Database Configuration
 
-Edit `config/default.json` or environment variables:
+All database connection values come from environment variables. See `.env.example` for the full list. Key variables:
 
-```json
-{
-  "database": {
-    "default": "mongodb",
-    "mongodb": {
-      "uri": "mongodb://localhost:27017/base-server"
-    },
-    "postgresql": {
-      "host": "localhost",
-      "port": 5432,
-      "database": "base_server"
-    }
-  }
-}
-```
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DB_DEFAULT` | `mongodb` | Which database to use by default (`mongodb` or `postgresql`) |
+| `DB_CONNECTION` | — | MongoDB connection URI |
+| `MONGO_MAX_POOL_SIZE` | `10` (dev) / `20` (prod) | Mongoose pool size |
+| `PORTFOLIO_DB_HOST` | `localhost` | PostgreSQL host |
+| `PORTFOLIO_DB_PORT` | `5432` | PostgreSQL port |
+| `PORTFOLIO_DB_NAME` | `base_server` | PostgreSQL database name |
+| `PORTFOLIO_DB_USER` / `PORTFOLIO_DB_PASS` | — | PostgreSQL credentials |
+| `PORTFOLIO_DB_SSL` | `false` | Enable SSL (Aiven) |
+
+Defaults for non-secret values live in `src/config.js`. Override per-environment via env vars.
 
 ### AI Service Configuration
 
-```json
-{
-  "ai": {
-    "defaultProvider": "openai",
-    "providers": {
-      "openai": {
-        "apiKey": "your-api-key",
-        "model": "gpt-3.5-turbo"
-      },
-      "gemini": {
-        "apiKey": "your-api-key",
-        "model": "gemini-pro"
-      },
-      "grok": {
-        "apiKey": "your-api-key",
-        "model": "grok-beta"
-      }
-    }
-  }
-}
-```
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AI_DEFAULT_PROVIDER` | `groq` | Provider to try first |
+| `OPENAI_API_KEY` | — | OpenAI API key |
+| `OPENAI_MODEL` | `gpt-4o-mini` | Default OpenAI model |
+| `OPENAI_MAX_TOKENS` | `1000` | Default max tokens |
+| `OPENAI_TEMPERATURE` | `0.7` | Default temperature |
+| `GEMINI_API_KEY` | — | Google Gemini API key |
+| `GEMINI_MODEL` | `gemini-3.5-flash` | Default Gemini model |
+| `GROQ_API_KEY` | — | Groq API key |
+| `GROQ_MODEL` | `llama-3.3-70b-versatile` | Default Groq model |
+| `ANTHROPIC_API_KEY` | — | Anthropic API key |
+| `ANTHROPIC_MODEL` | `claude-3-5-sonnet-20241022` | Default Anthropic model |
+
+Each provider exposes the same `*_MAX_TOKENS` / `*_TEMPERATURE` overrides. To add a new provider or change defaults, edit the relevant section in `src/config.js`.
 
 ## 📚 API Documentation
 
@@ -272,17 +260,10 @@ CMD ["npm", "start"]
    module.exports = router;
    ```
 
-3. Update config to enable project:
-   ```json
-   {
-     "projects": {
-       "your-project": {
-         "database": "mongodb",
-         "enabled": true,
-         "routes": ["endpoint"]
-       }
-     }
-   }
+3. Mount the routes in `src/app.js`:
+   ```javascript
+   const yourProjectRoutes = require('./api/projects/your-project/routes');
+   app.use('/api/your-project', yourProjectRoutes);
    ```
 
 ## 🛠️ Development
@@ -292,7 +273,7 @@ CMD ["npm", "start"]
 1. Create service file in `src/services/`
 2. Implement required methods: `generateText`, `analyzeText`
 3. Update `aiService.js` to include new provider
-4. Add configuration to config files
+4. Add the provider's defaults to the `ai.providers` block in `src/config.js` (model name, max tokens, temperature, apiKey env var)
 
 ### Database Operations
 

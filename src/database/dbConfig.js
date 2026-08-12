@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const { Pool } = require('pg');
-const config = require('config');
+const config = require('../config');
 
 class DatabaseManager {
   constructor() {
