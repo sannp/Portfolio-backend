@@ -14,7 +14,7 @@ jest.mock('../../src/database/dbConfig', () => ({
 }));
 
 // Mock config
-jest.mock('config', () => ({
+jest.mock('../../src/config', () => ({
   get: jest.fn((key) => {
     const configData = {
       'upload.maxFileSize': 20000000,

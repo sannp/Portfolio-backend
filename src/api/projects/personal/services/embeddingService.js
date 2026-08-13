@@ -21,9 +21,9 @@ class EmbeddingService {
    */
   async generateAndStoreEmbeddings(resumeId, chunks) {
     try {
-      const pool = dbManager.getPortfolioPostgresConnection();
+      const pool = dbManager.getPostgresConnection();
       if (!pool) {
-        throw new Error('Portfolio PostgreSQL connection not available');
+        throw new Error('PostgreSQL connection not available');
       }
 
       // Delete existing chunks for this resume
@@ -103,7 +103,7 @@ class EmbeddingService {
    */
   async deleteResumeChunks(resumeId) {
     try {
-      const pool = dbManager.getPortfolioPostgresConnection();
+      const pool = dbManager.getPostgresConnection();
       if (!pool) {
         throw new Error('Portfolio PostgreSQL connection not available');
       }
@@ -128,7 +128,7 @@ class EmbeddingService {
       // Delete chunks of specific types that are being updated
       const chunkTypes = [...new Set(chunks.map(c => c.type))];
 
-      const pool = dbManager.getPortfolioPostgresConnection();
+      const pool = dbManager.getPostgresConnection();
       if (!pool) {
         throw new Error('Portfolio PostgreSQL connection not available');
       }
@@ -187,7 +187,7 @@ class EmbeddingService {
    */
   async getEmbeddingStats(resumeId) {
     try {
-      const pool = dbManager.getPortfolioPostgresConnection();
+      const pool = dbManager.getPostgresConnection();
       if (!pool) {
         throw new Error('Portfolio PostgreSQL connection not available');
       }

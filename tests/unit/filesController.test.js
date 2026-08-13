@@ -9,7 +9,7 @@ jest.mock('mongoose', () => ({
 }));
 
 // Mock config
-jest.mock('config', () => ({
+jest.mock('../../src/config', () => ({
   get: jest.fn((key) => {
     const config = {
       'upload.maxFileSize': 20000000,

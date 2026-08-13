@@ -1,4 +1,4 @@
-const config = require('config');
+const config = require('../config');
 // const openAIService = require('./openAI');
 const geminiService = require('./googleGemini');
 const groqService = require('./groqAPI');

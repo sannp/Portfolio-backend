@@ -1,5 +1,4 @@
 const express = require('express');
-const config = require('config');
 const aiService = require('#services/aiService');
 
 const router = express.Router();

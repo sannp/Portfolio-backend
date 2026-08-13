@@ -136,9 +136,9 @@ Ensure that all extracted information is accurate and relevant to the resume con
  */
 async function clearOldData() {
   try {
-    const pool = dbManager.getPortfolioPostgresConnection();
+    const pool = dbManager.getPostgresConnection();
     if (!pool) {
-      throw new Error('Portfolio PostgreSQL connection not available');
+      throw new Error('PostgreSQL connection not available');
     }
 
     console.log('🗑️  Clearing old resume data...');
@@ -164,9 +164,9 @@ async function clearOldData() {
  */
 async function initializeDatabaseSchema() {
   try {
-    const pool = dbManager.getPortfolioPostgresConnection();
+    const pool = dbManager.getPostgresConnection();
     if (!pool) {
-      throw new Error('Portfolio PostgreSQL connection not available');
+      throw new Error('PostgreSQL connection not available');
     }
 
     console.log('🔧 Initializing database schema...');
@@ -194,9 +194,9 @@ async function initializeDatabaseSchema() {
  */
 async function saveToDatabase(structuredData) {
   try {
-    const pool = dbManager.getPortfolioPostgresConnection();
+    const pool = dbManager.getPostgresConnection();
     if (!pool) {
-      throw new Error('Portfolio PostgreSQL connection not available');
+      throw new Error('PostgreSQL connection not available');
     }
 
     // Check if resume exists

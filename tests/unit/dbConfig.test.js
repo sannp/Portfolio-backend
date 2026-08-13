@@ -25,15 +25,14 @@ jest.mock('pg', () => ({
 }));
 
 // Mock config
-jest.mock('config', () => {
+jest.mock('../../src/config', () => {
   const configObj = {
-    'database.default': 'mongodb',
     'database.mongodb': {
       uri: 'mongodb://localhost:27017/test',
-      options: { useNewUrlParser: true }
+      options: { maxPoolSize: 10 }
     },
     'database.mongodb.uri': 'mongodb://localhost:27017/test',
-    'database.mongodb.options': { useNewUrlParser: true },
+    'database.mongodb.options': { maxPoolSize: 10 },
     'database.postgresql': {
       host: 'localhost',
       port: 5432,
@@ -57,24 +56,14 @@ const dbManager = require('../../src/database/dbConfig');
 
 describe('DatabaseManager', () => {
   const envVars = [
-    'DB_DEFAULT',
-    'DB_CONNECTION',
-    'PORTFOLIO_DB_SSL',
-    'POSTGRES_SSL',
-    'PORTFOLIO_DB_CA_CERT',
-    'POSTGRES_CA_CERT',
-    'PORTFOLIO_DB_HOST',
-    'POSTGRES_HOST',
-    'PORTFOLIO_DB_PORT',
-    'POSTGRES_PORT',
-    'PORTFOLIO_DB_NAME',
-    'POSTGRES_DATABASE',
-    'PORTFOLIO_DB_USER',
-    'POSTGRES_USERNAME',
-    'PORTFOLIO_DB_PASS',
-    'PORTFOLIO_DB_PASSWORD',
-    'POSTGRES_PASSWORD',
-    'PORTFOLIO_RAG_DB_NAME'
+    'MONGO_DB_CONNECTION',
+    'POSTGRES_DB_SSL',
+    'POSTGRES_DB_CA_CERT',
+    'POSTGRES_DB_HOST',
+    'POSTGRES_DB_PORT',
+    'POSTGRES_DB_NAME',
+    'POSTGRES_DB_USER',
+    'POSTGRES_DB_PASS'
   ];
   const envBackup = {};
 
@@ -104,10 +93,6 @@ describe('DatabaseManager', () => {
     test('should initialize with empty connections', () => {
       expect(dbManager.connections).toEqual({});
     });
-
-    test('should set default database from config', () => {
-      expect(dbManager.defaultDB).toBe('mongodb');
-    });
   });
 
   describe('connectMongoDB', () => {
@@ -119,7 +104,7 @@ describe('DatabaseManager', () => {
 
       expect(mongoose.connect).toHaveBeenCalledWith(
         'mongodb://localhost:27017/test',
-        { useNewUrlParser: true }
+        { maxPoolSize: 10 }
       );
       expect(mongoose.mongo.GridFSBucket).toHaveBeenCalled();
       expect(dbManager.gfs).toBeDefined();

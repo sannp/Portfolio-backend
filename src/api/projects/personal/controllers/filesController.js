@@ -6,7 +6,7 @@ const path = require('path');
 const { Readable } = require('stream');
 const mongoose = require('mongoose');
 const dbManager = require('#database/dbConfig');
-const config = require('config');
+const config = require('../../../../config');
 
 // Use memory storage - file will be in req.file.buffer
 const storage = multer.memoryStorage();

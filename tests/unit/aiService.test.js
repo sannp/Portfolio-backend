@@ -16,7 +16,7 @@ jest.mock('../../src/services/groqAPI', () => ({
   available: true
 }));
 
-jest.mock('config', () => ({
+jest.mock('../../src/config', () => ({
   get: jest.fn((key) => {
     const providers = {
       gemini: {

@@ -6,7 +6,7 @@
 
 const embeddingService = require('./embeddingService');
 const dbManager = require('#database/dbConfig');
-const config = require('config');
+const config = require('../../../../config');
 
 class ContextBuilder {
   constructor() {
@@ -26,7 +26,7 @@ class ContextBuilder {
    */
   async buildContext(resumeId, question) {
     try {
-      const pool = dbManager.getPortfolioPostgresConnection();
+      const pool = dbManager.getPostgresConnection();
       if (!pool) {
         throw new Error('Portfolio PostgreSQL connection not available');
       }
@@ -52,7 +52,7 @@ class ContextBuilder {
       console.error('Error building context:', error);
       // Try fallback to resume data on error
       try {
-        const pool = dbManager.getPortfolioPostgresConnection();
+        const pool = dbManager.getPostgresConnection();
         if (pool) {
           console.warn('[ContextBuilder] Using fallback to resume data due to error');
           return await this._buildContextFromResumeData(pool, resumeId, question);

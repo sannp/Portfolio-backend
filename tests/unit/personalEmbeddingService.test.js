@@ -14,7 +14,7 @@ jest.mock('../../src/services/aiService', () => ({
 
 // Mock dbConfig
 jest.mock('../../src/database/dbConfig', () => ({
-  getPortfolioPostgresConnection: jest.fn()
+  getPostgresConnection: jest.fn()
 }));
 
 describe('EmbeddingService', () => {
@@ -89,7 +89,7 @@ describe('EmbeddingService', () => {
       const mockPool = {
         query: jest.fn().mockResolvedValue({ rows: [{ id: 1 }] })
       };
-      dbManager.getPortfolioPostgresConnection.mockReturnValue(mockPool);
+      dbManager.getPostgresConnection.mockReturnValue(mockPool);
 
       const mock768Vector = Array(768).fill(0.2);
       aiService.embedText.mockResolvedValue({
@@ -123,11 +123,11 @@ describe('EmbeddingService', () => {
     });
 
     test('should throw error if PostgreSQL connection is not available', async () => {
-      dbManager.getPortfolioPostgresConnection.mockReturnValue(null);
+      dbManager.getPostgresConnection.mockReturnValue(null);
 
       await expect(
         embeddingService.generateAndStoreEmbeddings(1, [{ text: 'test', type: 'skills', metadata: {} }])
-      ).rejects.toThrow('Portfolio PostgreSQL connection not available');
+      ).rejects.toThrow('PostgreSQL connection not available');
     });
   });
 });

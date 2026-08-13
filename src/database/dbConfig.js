@@ -1,16 +1,19 @@
 const mongoose = require('mongoose');
 const { Pool } = require('pg');
-const config = require('config');
+const config = require('../config');
 
 class DatabaseManager {
   constructor() {
     this.connections = {};
-    this.defaultDB = process.env.DB_DEFAULT || config.get('database.default');
   }
 
   async connectMongoDB() {
+    const mongoUri = config.get('database.mongodb.uri');
+    if (!mongoUri) {
+      throw new Error('❌ Missing MONGO_DB_CONNECTION environment variable.');
+    }
+
     try {
-      const mongoUri = process.env.DB_CONNECTION || config.get('database.mongodb.uri');
       const mongoOptions = config.get('database.mongodb.options');
       await mongoose.connect(mongoUri, mongoOptions);
       console.log('✅ MongoDB connected successfully');
@@ -29,27 +32,32 @@ class DatabaseManager {
   }
 
   async connectPostgreSQL() {
-    try {
-      const pgConfig = config.get('database.postgresql');
+    const pgConfig = config.get('database.postgresql');
+    if (!pgConfig.host || !pgConfig.database || !pgConfig.username) {
+      throw new Error('❌ Missing required PostgreSQL configuration (POSTGRES_DB_HOST, POSTGRES_DB_NAME, POSTGRES_DB_USER).');
+    }
 
-      // Build SSL config for Aiven (CA cert required)
-      // Support both new PORTFOLIO_DB_* and legacy POSTGRES_* variable names
-      let sslConfig = (process.env.PORTFOLIO_DB_SSL || process.env.POSTGRES_SSL) === 'true' || pgConfig.ssl;
-      if (process.env.PORTFOLIO_DB_CA_CERT || process.env.POSTGRES_CA_CERT || pgConfig.caCert) {
+    try {
+      let sslConfig = pgConfig.ssl;
+      if (pgConfig.caCert) {
         sslConfig = {
           rejectUnauthorized: true,
-          ca: process.env.PORTFOLIO_DB_CA_CERT || process.env.POSTGRES_CA_CERT || pgConfig.caCert,
+          ca: pgConfig.caCert,
+        };
+      } else if (pgConfig.ssl) {
+        sslConfig = {
+          rejectUnauthorized: false,
         };
       }
 
       const pool = new Pool({
-        host: process.env.PORTFOLIO_DB_HOST || process.env.POSTGRES_HOST || pgConfig.host,
-        port: process.env.PORTFOLIO_DB_PORT || process.env.POSTGRES_PORT || pgConfig.port,
-        database: process.env.PORTFOLIO_DB_NAME || process.env.POSTGRES_DATABASE || pgConfig.database,
-        user: process.env.PORTFOLIO_DB_USER || process.env.POSTGRES_USERNAME || pgConfig.username,
-        password: process.env.PORTFOLIO_DB_PASS || process.env.PORTFOLIO_DB_PASSWORD || process.env.POSTGRES_PASSWORD || pgConfig.password,
+        host: pgConfig.host,
+        port: pgConfig.port,
+        database: pgConfig.database,
+        user: pgConfig.username,
+        password: pgConfig.password,
         ssl: sslConfig,
-        max: pgConfig.maxConnections || 5,
+        max: pgConfig.maxConnections,
       });
 
       // Test connection
@@ -69,77 +77,17 @@ class DatabaseManager {
     }
   }
 
-  async connectPortfolioPostgreSQL() {
-    try {
-      const pgConfig = config.get('database.postgresql');
-
-      // Build SSL config for Aiven (CA cert required)
-      let sslConfig = (process.env.PORTFOLIO_DB_SSL || process.env.POSTGRES_SSL) === 'true' || pgConfig.ssl;
-      if (process.env.PORTFOLIO_DB_CA_CERT || process.env.POSTGRES_CA_CERT || pgConfig.caCert) {
-        sslConfig = {
-          rejectUnauthorized: true,
-          ca: process.env.PORTFOLIO_DB_CA_CERT || process.env.POSTGRES_CA_CERT || pgConfig.caCert,
-        };
-      }
-
-      // Use same connection settings but different database name
-      const pool = new Pool({
-        host: process.env.PORTFOLIO_DB_HOST || process.env.POSTGRES_HOST || pgConfig.host,
-        port: process.env.PORTFOLIO_DB_PORT || process.env.POSTGRES_PORT || pgConfig.port,
-        database: process.env.PORTFOLIO_RAG_DB_NAME || process.env.PORTFOLIO_DB_NAME || process.env.POSTGRES_DATABASE || pgConfig.database,
-        user: process.env.PORTFOLIO_DB_USER || process.env.POSTGRES_USERNAME || pgConfig.username,
-        password: process.env.PORTFOLIO_DB_PASS || process.env.PORTFOLIO_DB_PASSWORD || process.env.POSTGRES_PASSWORD || pgConfig.password,
-        ssl: sslConfig,
-        max: pgConfig.maxConnections || 5,
-      });
-
-      // Test connection
-      const client = await pool.connect();
-      try {
-        await client.query('SELECT NOW()');
-      } finally {
-        client.release();
-      }
-
-      console.log('✅ Portfolio PostgreSQL connected successfully');
-      this.connections.portfolioPostgresql = pool;
-      return pool;
-    } catch (error) {
-      console.error('❌ Portfolio PostgreSQL connection error:', error);
-      throw error;
-    }
-  }
-
   async initialize() {
     try {
-      const hasMongoUri = process.env.DB_CONNECTION || config.has('database.mongodb.uri');
-      if (this.defaultDB === 'mongodb' || hasMongoUri) {
-        await this.connectMongoDB();
-      }
+      await this.connectMongoDB();
     } catch (error) {
-      console.warn('⚠️ MongoDB connection failed, continuing without it:', error.message);
+      console.warn('⚠️ MongoDB connection failed:', error.message);
     }
 
     try {
-      const pgHost = process.env.PORTFOLIO_DB_HOST || process.env.POSTGRES_HOST;
-      const hasPostgresConfig = config.has('database.postgresql.host');
-      // Only connect if PORTFOLIO_DB_HOST or POSTGRES_HOST is explicitly set and not empty
-      if ((pgHost && pgHost.trim() !== '') || (!pgHost && hasPostgresConfig)) {
-        await this.connectPostgreSQL();
-      }
+      await this.connectPostgreSQL();
     } catch (error) {
-      console.warn('⚠️ PostgreSQL connection failed, continuing without it:', error.message);
-    }
-
-    try {
-      const pgHost = process.env.PORTFOLIO_DB_HOST || process.env.POSTGRES_HOST;
-      const hasPostgresConfig = config.has('database.postgresql.host');
-      // Only connect portfolio RAG DB if PORTFOLIO_DB_HOST is set and PORTFOLIO_RAG_DB_NAME is different
-      if ((pgHost && pgHost.trim() !== '') || (!pgHost && hasPostgresConfig)) {
-        await this.connectPortfolioPostgreSQL();
-      }
-    } catch (error) {
-      console.warn('⚠️ Portfolio PostgreSQL connection failed, continuing without it:', error.message);
+      console.warn('⚠️ PostgreSQL connection failed:', error.message);
     }
   }
 
@@ -151,10 +99,6 @@ class DatabaseManager {
     return this.connections.postgresql;
   }
 
-  getPortfolioPostgresConnection() {
-    return this.connections.portfolioPostgresql;
-  }
-
   getGridFS() {
     return this.gfs;
   }
@@ -163,9 +107,6 @@ class DatabaseManager {
     await mongoose.disconnect();
     if (this.connections.postgresql) {
       await this.connections.postgresql.end();
-    }
-    if (this.connections.portfolioPostgresql) {
-      await this.connections.portfolioPostgresql.end();
     }
   }
 }
