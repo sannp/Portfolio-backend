@@ -78,8 +78,8 @@ class ChatController {
    */
   async processMessage(sessionId, message) {
     try {
-      // Get current resume (use portfolio-specific PostgreSQL connection)
-      const pool = dbManager.getPortfolioPostgresConnection() || dbManager.getPostgresConnection();
+      // Get current resume from PostgreSQL
+      const pool = dbManager.getPostgresConnection();
       if (!pool) {
         return {
           success: false,
@@ -441,7 +441,7 @@ router.get('/history/:sessionId', (req, res) => {
 
 // Health check for chat service
 router.get('/health', (req, res) => {
-  const pool = dbManager.getPortfolioPostgresConnection() || dbManager.getPostgresConnection();
+  const pool = dbManager.getPostgresConnection();
   
   res.json({
     success: true,

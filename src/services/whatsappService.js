@@ -10,20 +10,9 @@ class WhatsAppService {
    * Helper: Get current credentials from process.env or config
    */
   _getCredentials() {
-    const accessToken =
-      process.env.WHATSAPP_ACCESS_TOKEN ||
-      process.env.META_WA_TOKEN ||
-      (config.has('whatsapp.accessToken') ? config.get('whatsapp.accessToken') : '');
-
-    const phoneNumberId =
-      process.env.WHATSAPP_PHONE_NUMBER_ID ||
-      process.env.META_PHONE_NUMBER_ID ||
-      (config.has('whatsapp.phoneNumberId') ? config.get('whatsapp.phoneNumberId') : '');
-
-    const recipientPhone =
-      process.env.WHATSAPP_RECIPIENT_PHONE ||
-      process.env.ALERT_RECIPIENT_PHONE ||
-      (config.has('whatsapp.recipientPhone') ? config.get('whatsapp.recipientPhone') : '');
+    const accessToken = process.env.WHATSAPP_ACCESS_TOKEN || config.get('whatsapp.accessToken') || '';
+    const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID || config.get('whatsapp.phoneNumberId') || '';
+    const recipientPhone = process.env.WHATSAPP_RECIPIENT_PHONE || config.get('whatsapp.recipientPhone') || '';
 
     return { accessToken, phoneNumberId, recipientPhone };
   }

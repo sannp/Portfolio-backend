@@ -7,7 +7,7 @@ const { chatController } = require('./controllers/chatController');
 
 // Simple in-memory rate limiting
 const ipRequestCounts = new Map();
-const MAX_REQUESTS_PER_IP = parseInt(process.env.MAX_CHAT_REQUESTS_PER_IP) || 10;
+const MAX_REQUESTS_PER_IP = parseInt(process.env.MAX_CHAT_REQUESTS_PER_IP) || 2;
 
 // Reset quotas every hour
 setInterval(() => {
@@ -90,7 +90,7 @@ class SocketHandler {
             for (let i = 0; i < response.message.length; i += chunkSize) {
               const chunk = response.message.slice(i, i + chunkSize);
               socket.emit('portfolio:chat:token', chunk);
-              
+
               // Small delay for natural typing effect
               await new Promise(resolve => setTimeout(resolve, 30));
             }
